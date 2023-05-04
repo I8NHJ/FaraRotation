@@ -32,7 +32,7 @@ Cal calibration_data;
 void setup() {
   initialize_serial();
   initialize_pins();
-  initialize_eeprom();  
+  initialize_eeprom();
 }
 
 void loop() {
