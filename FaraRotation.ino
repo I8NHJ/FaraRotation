@@ -173,6 +173,12 @@ void check_nextion_port() {
         #endif
       } // COMMAND ROTATE_TX_ANTENNA_CCW
 
+      
+      if (nextion_received_command == SYNC_TX_2_RX) {
+        command_received = true;
+        // SYNCROLLO HERE;
+      } // COMMAND ROTATE_RX_AND_TX_ENABLE
+
       if (nextion_received_command == ROTATE_RX_AND_TX_ENABLE) {
         command_received = true;
         rotate_both = true;
@@ -182,6 +188,7 @@ void check_nextion_port() {
         command_received = true;
         rotate_both = false;
       } // COMMAND ROTATE_RX_AND_TX_ENABLE
+
 
       if (nextion_received_command == CALIBRATE_RX_ANTENNA_CW) {
         command_received = true;
@@ -256,7 +263,7 @@ void check_nextion_port() {
           control_port->print("nextion command: ");
           control_port->println(nextion_received_command);
           control_port->print("GRID to EEPROM: ");
-          control_port->println(configuration_data.Callsign);
+          control_port->println(configuration_data.Grid);
         #endif      
         EEPROM.put(1, configuration_data);
       } // COMMAND SAVE_CALLSIGN_TO_EEPROM
@@ -360,3 +367,5 @@ void nextion_show_angle(int degrees, unsigned int antenna) {
       send_nextion_message (workstring);
   }
 }
+
+#include "Maidenhead.h"
