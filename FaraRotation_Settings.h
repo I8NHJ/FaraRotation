@@ -1,5 +1,4 @@
 // Serial Port Settings
-// Leonardo Eth defines Class Serial (USB) and Serial1 (Pins 0,1)
 #define CALLSIGN "  N5NHJ  " // ATTENTION!: Max 9 characters
 #define GRID "EM13pc" // ATTENTION: Max 6 characters
 
@@ -14,7 +13,7 @@
 
 #define COMMAND_BUFFER_SIZE 50
 
-#define POTS_READING_RATE 100000
+#define POTS_READING_RATE 250
 
 #define RX_ANTENNA 0
 #define TX_ANTENNA 1
