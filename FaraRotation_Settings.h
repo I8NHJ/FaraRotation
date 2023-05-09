@@ -13,7 +13,10 @@
 
 #define COMMAND_BUFFER_SIZE 50
 
-#define POTS_READING_RATE 250
+#define POTS_READING_RATE 5000
 
 #define RX_ANTENNA 0
 #define TX_ANTENNA 1
+
+// #define PWM_OUTPUT
+#define DIGITAL_OUTPUT

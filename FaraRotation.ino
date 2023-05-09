@@ -30,8 +30,7 @@ struct Conf {
   unsigned int AnalogHi[2];
   char Callsign[10]; // Max 9 characters
   char Grid[7]; // Max 6 characters
-};
-Conf configuration_data;
+}; Conf configuration_data;
 
 void setup() {
   initialize_serial();
@@ -92,27 +91,43 @@ void initialize_serial() {
 } /* END initialize_serial() */
 
 void initialize_pins(){
+  // define pins
   pinMode(rx_rotate_cw_enable,OUTPUT);
   pinMode(rx_rotate_ccw_enable,OUTPUT);
-  pinMode(rx_rotate_cw_pwm,OUTPUT);
-  pinMode(rx_rotate_ccw_pwm,OUTPUT);
   pinMode(tx_rotate_cw_enable,OUTPUT);
   pinMode(tx_rotate_ccw_enable,OUTPUT);
-  pinMode(tx_rotate_cw_pwm,OUTPUT);
-  pinMode(tx_rotate_ccw_pwm,OUTPUT);
+  #if defined (PWM_OUTPUT)
+    pinMode(rx_rotate_cw_pwm,OUTPUT);
+    pinMode(rx_rotate_ccw_pwm,OUTPUT);
+    pinMode(tx_rotate_cw_pwm,OUTPUT);
+    pinMode(tx_rotate_ccw_pwm,OUTPUT);
+  #endif
+  #if defined (DIGITAL_OUTPUT)
+    pinMode(rx_rotate_cw_dig,OUTPUT);
+    pinMode(rx_rotate_ccw_dig,OUTPUT);
+    pinMode(tx_rotate_cw_dig,OUTPUT);
+    pinMode(tx_rotate_ccw_dig,OUTPUT);
+  #endif
 
-  // enable pwm pins
+  // set output controls to low
+  #if defined (PWM_OUTPUT)
+    analogWrite(rx_rotate_cw_pwm,0);
+    analogWrite(rx_rotate_ccw_pwm,0);
+    analogWrite(tx_rotate_cw_pwm,0);
+    analogWrite(tx_rotate_ccw_pwm,0);
+  #endif
+  #if defined (DIGITAL_OUTPUT)
+    digitalWrite(rx_rotate_cw_dig,LOW);
+    digitalWrite(rx_rotate_ccw_dig,LOW);
+    digitalWrite(tx_rotate_cw_dig,LOW);
+    digitalWrite(tx_rotate_ccw_dig,LOW);
+  #endif
+
+  // enable rotation 
   digitalWrite(rx_rotate_cw_enable,HIGH);
   digitalWrite(rx_rotate_ccw_enable,HIGH);
   digitalWrite(tx_rotate_cw_enable,HIGH);
   digitalWrite(tx_rotate_ccw_enable,HIGH);
-
-  // set controls to low
-  digitalWrite(rx_rotate_cw_pwm,LOW);
-  digitalWrite(rx_rotate_ccw_pwm,LOW);
-  digitalWrite(tx_rotate_cw_pwm,LOW);
-  digitalWrite(tx_rotate_ccw_pwm,LOW);
-
 } /* END initialize_pins() */
 
 void check_nextion_port() {
@@ -280,41 +295,100 @@ void check_nextion_port() {
 } //END check_nextion_port()
 
 void stop_all(){
-  digitalWrite(rx_rotate_cw_pwm,LOW);
-  digitalWrite(rx_rotate_ccw_pwm,LOW);
-  digitalWrite(tx_rotate_cw_pwm,LOW);
-  digitalWrite(tx_rotate_ccw_pwm,LOW);
+  #if defined (PWM_OUTPUT)
+    analogWrite(rx_rotate_cw_pwm,0);
+    analogWrite(rx_rotate_ccw_pwm,0);
+    analoglWrite(tx_rotate_cw_pwm,0);
+    analogWrite(tx_rotate_ccw_pwm,0);
+  #endif
+  #if defined (DIGITAL_OUTPUT)
+    digitalWrite(rx_rotate_cw_dig,LOW);
+    digitalWrite(rx_rotate_ccw_dig,LOW);
+    digitalWrite(tx_rotate_cw_dig,LOW);
+    digitalWrite(tx_rotate_ccw_dig,LOW);
+  #endif
+
 } /* END stop_all() */
 
 void rotate_antenna(byte action, bool link) {
+  stop_all();
+  test_pins();
   switch (action) {
     case ROTATE_RX_ANTENNA_CW_ENU:
-      digitalWrite(rx_rotate_cw_pwm,HIGH);
-      if (link) {
-        digitalWrite(tx_rotate_cw_pwm,HIGH);
-      }
+      #if defined (PWM_OUTPUT)
+        analogWrite(rx_rotate_cw_pwm,255);
+        if (link) {
+          analogWrite(tx_rotate_cw_pwm,255);
+        }
+      #endif
+      #if defined (DIGITAL_OUTPUT)
+        digitalWrite(rx_rotate_cw_dig,HIGH);
+        if (link) {
+          digitalWrite(tx_rotate_cw_dig,HIGH);
+        }
+      #endif
     break;
+
     case ROTATE_RX_ANTENNA_CCW_ENU:
-      digitalWrite(rx_rotate_ccw_pwm,HIGH);
-      if (link) {
-        digitalWrite(tx_rotate_ccw_pwm,HIGH);
-      }
+      #if defined (PWM_OUTPUT)
+        analogWrite(rx_rotate_ccw_pwm,255);
+        if (link) {
+          analogWrite(tx_rotate_ccw_pwm,255);
+        }
+      #endif
+      #if defined (DIGITAL_OUTPUT)
+        digitalWrite(rx_rotate_ccw_dig,HIGH);
+        if (link) {
+          digitalWrite(tx_rotate_ccw_dig,HIGH);
+        }
+      #endif
     break;
+
     case ROTATE_TX_ANTENNA_CW_ENU:
-      digitalWrite(tx_rotate_cw_pwm,HIGH);
-      if (link) {
-        digitalWrite(rx_rotate_cw_pwm,HIGH);
-      }
+      #if defined (PWM_OUTPUT)
+        analogWrite(tx_rotate_cw_pwm,255);
+        if (link) {
+          analogWrite(rx_rotate_cw_pwm,255);
+        }
+      #endif
+      #if defined (DIGITAL_OUTPUT)
+        digitalWrite(tx_rotate_cw_dig,HIGH);
+        if (link) {
+          digitalWrite(rx_rotate_cw_dig,HIGH);
+        }
+      #endif
     break;
+
     case ROTATE_TX_ANTENNA_CCW_ENU:
-      digitalWrite(tx_rotate_ccw_pwm,HIGH);
-      if (link) {
-        digitalWrite(rx_rotate_ccw_pwm,HIGH);
-      }
+      #if defined (PWM_OUTPUT)
+        analogWrite(tx_rotate_ccw_pwm,255);
+        if (link) {
+          analogWrite(rx_rotate_ccw_pwm,255);
+        }
+      #endif
+      #if defined (DIGITAL_OUTPUT)
+        digitalWrite(tx_rotate_ccw_dig,HIGH);
+        if (link) {
+          digitalWrite(rx_rotate_ccw_dig,HIGH);
+        }
+      #endif
     break;
   }
+  test_pins();
 }  /* END rotate_antenna() */
 
+void test_pins() {
+  #ifdef DEBUG
+  control_port->print ("RX_CW ");
+  control_port->print (String(digitalRead(rx_rotate_cw_dig)));
+  control_port->print ("\tRX_CCW ");
+  control_port->print (String(digitalRead(rx_rotate_ccw_dig)));
+  control_port->print ("\tTX_CW ");
+  control_port->print (String(digitalRead(tx_rotate_cw_dig)));
+  control_port->print ("\tTX_CCW ");
+  control_port->println (String(digitalRead(tx_rotate_ccw_dig)));
+  #endif
+}
 void read_degrees() {
   if ((millis() - last_degrees_reading_time) > POTS_READING_RATE) {
     unsigned int RX_Antenna_angle = analogRead(rx_rotator_degs_pin);
@@ -369,3 +443,4 @@ void nextion_show_angle(int degrees, unsigned int antenna) {
 }
 
 #include "Maidenhead.h"
+#include "moon2.h"
