@@ -65,4 +65,3 @@ char *coordinates_to_maidenhead(float latitude_degrees,float longitude_degrees){
   return temp_string;
 
 }
-
