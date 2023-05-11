@@ -29,8 +29,8 @@ int nextion_port_buffer_index = 0;
 unsigned long last_nextion_port_receive_time = 0;
 unsigned long last_degrees_reading_time = 0;
 struct Conf {
-  unsigned int AnalogLow[2];
-  unsigned int AnalogHi[2];
+  unsigned int Analog_CCW[2];
+  unsigned int Analog_CW[2];
   char Callsign[10]; // Max 9 characters
   char Grid[7]; // Max 6 characters
 }; Conf configuration_data;
@@ -53,7 +53,7 @@ void setup() {
 }
 
 void loop() {
-  check_nextion_port();
+  check_nextion_port_for_commands();
   read_degrees();
 }
 
@@ -63,10 +63,10 @@ void initialize_eeprom() {
   if (value!=1){
       control_port->println ("Init EEPROM");
     EEPROM.write(0,1);
-    configuration_data.AnalogLow[0] = 0;
-    configuration_data.AnalogLow[1] = 0;
-    configuration_data.AnalogHi[0] = 1023;
-    configuration_data.AnalogHi[1] = 1023;
+    configuration_data.Analog_CCW[0] = 0;
+    configuration_data.Analog_CCW[1] = 0;
+    configuration_data.Analog_CW[0] = 1023;
+    configuration_data.Analog_CW[1] = 1023;
     strcpy (configuration_data.Callsign, CALLSIGN);
     strcpy (configuration_data.Grid, GRID);
     EEPROM.put(1, configuration_data);
@@ -75,10 +75,10 @@ void initialize_eeprom() {
     EEPROM.get(1, configuration_data);
   }
   #ifdef DEBUG
-    control_port->println (configuration_data.AnalogLow[0]);
-    control_port->println (configuration_data.AnalogHi[0]); 
-    control_port->println (configuration_data.AnalogLow[1]); 
-    control_port->println (configuration_data.AnalogHi[1]);
+    control_port->println (configuration_data.Analog_CCW[0]);
+    control_port->println (configuration_data.Analog_CW[0]); 
+    control_port->println (configuration_data.Analog_CCW[1]); 
+    control_port->println (configuration_data.Analog_CW[1]);
     control_port->println (configuration_data.Callsign);
     control_port->println (configuration_data.Grid);
   #endif  
@@ -137,27 +137,28 @@ void initialize_pins(){
     digitalWrite(tx_rotate_ccw_dig,LOW);
   #endif
 
-  // enable rotation 
+  // enable rotation (needed for PWM board)
   digitalWrite(rx_rotate_cw_enable,HIGH);
   digitalWrite(rx_rotate_ccw_enable,HIGH);
   digitalWrite(tx_rotate_cw_enable,HIGH);
   digitalWrite(tx_rotate_ccw_enable,HIGH);
 } /* END initialize_pins() */
 
-void check_nextion_port() {
+void check_nextion_port_for_commands() {
   if (nextion_port->available()) {
-      #ifdef DEBUG
-        control_port->println(F("nextion_port has something to read"));
-      #endif
+    #ifdef DEBUG
+      control_port->println(F("nextion_port has something to read"));
+    #endif
     if ((millis() - last_nextion_port_receive_time) > NEXTION_PORT_READ_RATE) {
       bool command_received = false;
       #ifdef DEBUG
         control_port->println(F("Checking nextion_port for incoming command"));
       #endif
-      String nextion_received_command = (nextion_port->readStringUntil(13));
+	  String nextion_received_command = (nextion_port->readStringUntil(13));
       #ifdef DEBUG
         control_port->println(nextion_received_command);
       #endif
+	  
       if (nextion_received_command == STOP){
         command_received = true;
         stop_all();
@@ -201,47 +202,90 @@ void check_nextion_port() {
           control_port->println(F("nextion_port ROTATE TX ANTENNA CCW command received"));
         #endif
       } // COMMAND ROTATE_TX_ANTENNA_CCW
-
       
-      if (nextion_received_command == SYNC_TX_2_RX) {
+      if (nextion_received_command == SYNC_TX_2_RX_ENABLE) {
         command_received = true;
-        // SYNCROLLO HERE;
-      } // COMMAND ROTATE_RX_AND_TX_ENABLE
+        // SYNCRO LOGIC TO BE ADDED HERE  HERE;
+		#ifdef DEBUG
+          control_port->println(F("nextion_port SYNC_TX_2_RX_ENABLE command received"));
+        #endif
+      } // COMMAND SYNC_TX_2_RX_ENABLE
 
-      if (nextion_received_command == ROTATE_RX_AND_TX_ENABLE) {
+      if (nextion_received_command == SYNC_TX_2_RX_DISABLE) {
+        command_received = true;
+        // SYNCRO LOGIC TO BE ADDED HERE  HERE;
+		#ifdef DEBUG
+          control_port->println(F("nextion_port SYNC_TX_2_RX_DISABLE command received"));
+        #endif
+      } // COMMAND SYNC_TX_2_RX_DISABLE
+
+      if (nextion_received_command == LINK_RX_AND_TX_ENABLE) {
         command_received = true;
         rotate_both = true;
-      } // COMMAND ROTATE_RX_AND_TX_ENABLE
+		#ifdef DEBUG
+          control_port->println(F("nextion_port LINK_RX_AND_TX_ENABLE command received"));
+        #endif
+      } // COMMAND LINK_RX_AND_TX_ENABLE
       
-      if (nextion_received_command == ROTATE_RX_AND_TX_DISABLE) {
+      if (nextion_received_command == LINK_RX_AND_TX_DISABLE) {
         command_received = true;
         rotate_both = false;
-      } // COMMAND ROTATE_RX_AND_TX_ENABLE
+		#ifdef DEBUG
+          control_port->println(F("nextion_port LINK_RX_AND_TX_DISABLE command received"));
+        #endif
+      } // COMMAND LINK_RX_AND_TX_DISABLE
 
+      if (nextion_received_command == PTT_AUTOMATION_ENABLED) {
+        command_received = true;
+        // PTT LOGIC TO BE ADDED HERE;
+		#ifdef DEBUG
+          control_port->println(F("nextion_port PTT_AUTOMATION_ENABLED command received"));
+        #endif
+      } // COMMAND PTT_AUTOMATION_ENABLED_ENABLE
+
+      if (nextion_received_command == PTT_AUTOMATION_DISABLED) {
+        command_received = true;
+        // PTT LOGIC TO BE ADDED HERE;
+		#ifdef DEBUG
+          control_port->println(F("nextion_port PTT_AUTOMATION_DISABLED command received"));
+        #endif
+      } // COMMAND PTT_AUTOMATION_ENABLED_DISABLED
 
       if (nextion_received_command == CALIBRATE_RX_ANTENNA_CW) {
         command_received = true;
-        configuration_data.AnalogHi[RX_ANTENNA] = analogRead(rx_rotator_degs_pin);
+        configuration_data.Analog_CW[RX_ANTENNA] = analogRead(rx_rotator_degs_pin);
         EEPROM.put(1, configuration_data);
+		#ifdef DEBUG
+          control_port->println(F("nextion_port CALIBRATE_RX_ANTENNA_CW command received"));
+        #endif
       } // COMMAND CALIBRATE_RX_ANTENNA_CW
 
       if (nextion_received_command == CALIBRATE_RX_ANTENNA_CCW) {
         command_received = true;
-        configuration_data.AnalogLow[RX_ANTENNA] = analogRead(rx_rotator_degs_pin);
+        configuration_data.Analog_CCW[RX_ANTENNA] = analogRead(rx_rotator_degs_pin);
         EEPROM.put(1, configuration_data);
+		#ifdef DEBUG
+          control_port->println(F("nextion_port CALIBRATE_RX_ANTENNA_CCW command received"));
+        #endif
       } // COMMAND CALIBRATE_RX_ANTENNA_CCW
 
       if (nextion_received_command == CALIBRATE_TX_ANTENNA_CW) {
         command_received = true;
-        configuration_data.AnalogHi[TX_ANTENNA] = analogRead(tx_rotator_degs_pin);
+        configuration_data.Analog_CW[TX_ANTENNA] = analogRead(tx_rotator_degs_pin);
         EEPROM.put(1, configuration_data);
-      } // COMMAND CALIBRATE_RX_ANTENNA_CW
+		#ifdef DEBUG
+          control_port->println(F("nextion_port CALIBRATE_TX_ANTENNA_CW command received"));
+        #endif
+      } // COMMAND CALIBRATE_TX_ANTENNA_CW
 
       if (nextion_received_command == CALIBRATE_TX_ANTENNA_CCW) {
         command_received = true;
-        configuration_data.AnalogLow[TX_ANTENNA] = analogRead(tx_rotator_degs_pin);
+        configuration_data.Analog_CCW[TX_ANTENNA] = analogRead(tx_rotator_degs_pin);
         EEPROM.put(1, configuration_data);
-      } // COMMAND CALIBRATE_RX_ANTENNA_CCW
+		#ifdef DEBUG
+          control_port->println(F("nextion_port CALIBRATE_TX_ANTENNA_CCW command received"));
+        #endif
+      } // COMMAND CALIBRATE_TX_ANTENNA_CCW
 
       if (nextion_received_command == SEND_CONFIG){
         command_received = true;
@@ -256,21 +300,24 @@ void check_nextion_port() {
         strcat(workstring,"\"");
         send_nextion_message (workstring);
         strcpy(workstring, "RX_ANT_CW_ANA.txt=\"");
-        strcat (workstring, String(configuration_data.AnalogHi[0]).c_str());
+        strcat (workstring, String(configuration_data.Analog_CW[0]).c_str());
         strcat(workstring,"\"");
         send_nextion_message (workstring);
         strcpy(workstring, "RX_ANT_CCW_ANA.txt=\"");
-        strcat (workstring, String(configuration_data.AnalogLow[0]).c_str());
+        strcat (workstring, String(configuration_data.Analog_CCW[0]).c_str());
         strcat(workstring,"\"");
         send_nextion_message (workstring);
             strcpy(workstring, "TX_ANT_CW_ANA.txt=\"");
-        strcat (workstring, String(configuration_data.AnalogHi[1]).c_str());
+        strcat (workstring, String(configuration_data.Analog_CW[1]).c_str());
         strcat(workstring,"\"");
         send_nextion_message (workstring);
         strcpy(workstring, "TX_ANT_CCW_ANA.txt=\"");
-        strcat (workstring, String(configuration_data.AnalogLow[1]).c_str());
+        strcat (workstring, String(configuration_data.Analog_CCW[1]).c_str());
         strcat(workstring,"\"");
         send_nextion_message (workstring);
+		#ifdef DEBUG
+          control_port->println(F("nextion_port SEND_CONFIG command received"));
+        #endif
       } // COMMAND SEND_CONFIG
 
       if (nextion_received_command.substring(0,3) == SAVE_CALLSIGN_TO_EEPROM){
@@ -283,6 +330,9 @@ void check_nextion_port() {
           control_port->println(configuration_data.Callsign);
         #endif
         EEPROM.put(1, configuration_data);
+		#ifdef DEBUG
+          control_port->println(F("nextion_port SAVE_CALLSIGN_TO_EEPROM command received"));
+        #endif
       } // COMMAND SAVE_CALLSIGN_TO_EEPROM
 
       if (nextion_received_command.substring(0,3) == SAVE_GRID_TO_EEPROM){
@@ -295,12 +345,15 @@ void check_nextion_port() {
           control_port->println(configuration_data.Grid);
         #endif      
         EEPROM.put(1, configuration_data);
-      } // COMMAND SAVE_CALLSIGN_TO_EEPROM
+		#ifdef DEBUG
+          control_port->println(F("nextion_port SAVE_GRID_TO_EEPROM command received"));
+        #endif
+      } // COMMAND SAVE_GRID_TO_EEPROM
 
       if (!command_received) {
         nextion_port->flush();
         #ifdef DEBUG
-          control_port->println(F("nextion_port garbage received"));
+          control_port->println(F("nextion_port GARBAGE received"));
         #endif 
       } // END IF (COMMAND_RECEIVED)
       last_nextion_port_receive_time = millis();
@@ -321,7 +374,6 @@ void stop_all(){
     digitalWrite(tx_rotate_cw_dig,LOW);
     digitalWrite(tx_rotate_ccw_dig,LOW);
   #endif
-
 } /* END stop_all() */
 
 void rotate_antenna(byte action, bool link) {
@@ -387,22 +439,23 @@ void rotate_antenna(byte action, bool link) {
         }
       #endif
     break;
-  }
+  } 
   test_pins();
 }  /* END rotate_antenna() */
 
 void test_pins() {
   #ifdef DEBUG
-  control_port->print ("RX_CW ");
-  control_port->print (String(digitalRead(rx_rotate_cw_dig)));
-  control_port->print ("\tRX_CCW ");
-  control_port->print (String(digitalRead(rx_rotate_ccw_dig)));
-  control_port->print ("\tTX_CW ");
-  control_port->print (String(digitalRead(tx_rotate_cw_dig)));
-  control_port->print ("\tTX_CCW ");
-  control_port->println (String(digitalRead(tx_rotate_ccw_dig)));
+    control_port->print ("RX_CW ");
+    control_port->print (String(digitalRead(rx_rotate_cw_dig)));
+    control_port->print ("\tRX_CCW ");
+    control_port->print (String(digitalRead(rx_rotate_ccw_dig)));
+    control_port->print ("\tTX_CW ");
+    control_port->print (String(digitalRead(tx_rotate_cw_dig)));
+    control_port->print ("\tTX_CCW ");
+    control_port->println (String(digitalRead(tx_rotate_ccw_dig)));
   #endif
-}
+} /* END test_pins() */
+
 void read_degrees() {
   if ((millis() - last_degrees_reading_time) > POTS_READING_RATE) {
     unsigned int RX_Antenna_angle = analogRead(rx_rotator_degs_pin);
@@ -414,13 +467,18 @@ void read_degrees() {
 } /* END read_degrees() */
 
 int convert_analog_to_degrees(unsigned int analog_reading, unsigned int antenna){
-  if (analog_reading > configuration_data.AnalogHi[antenna]) {
-    analog_reading = configuration_data.AnalogHi[antenna];
+  if (analog_reading > configuration_data.Analog_CW[antenna]) {
+    analog_reading = configuration_data.Analog_CW[antenna];
   }
-  if (analog_reading < configuration_data.AnalogLow[antenna]) {
-    analog_reading = configuration_data.AnalogLow[antenna];
+  if (analog_reading < configuration_data.Analog_CCW[antenna]) {
+    analog_reading = configuration_data.Analog_CCW[antenna];
   }
-  return round((180.0/(configuration_data.AnalogHi[antenna]-configuration_data.AnalogLow[antenna]))*analog_reading);  
+  #ifdef DEBUG
+    control_port -> print (F("Anolog reading: \t"));
+    control_port -> println (analog_reading);
+  #endif
+  // returns a number between -90 and 90 based on the low (ccw) and hi(cw) calibration points for the motor  
+  return round(((analog_reading - configuration_data.Analog_CCW[antenna]) / (float)(configuration_data.Analog_CW[antenna]-configuration_data.Analog_CCW[antenna]) * 180.0) -90.0);  
 } // END convert_analog_to_degrees
 
 void send_nextion_message (char message[30]) {
@@ -441,7 +499,7 @@ void nextion_show_angle(int degrees, unsigned int antenna) {
       strcat (workstring, String(degrees).c_str());
       send_nextion_message (workstring);
       strcpy(workstring, "tRXAngle.txt=\"");
-      strcat (workstring, String(degrees-90).c_str());
+      strcat (workstring, String(degrees).c_str());
       strcat(workstring,"\"");
       send_nextion_message (workstring);
       break;;
