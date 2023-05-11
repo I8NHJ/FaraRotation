@@ -1,4 +1,4 @@
-#define CODE_VERSION "2023.04.25.01 N5NHJ"
+#define CODE_VERSION __DATE__ " " __TIME__ " N5NHJ"
 
 #define DEBUG
 
@@ -9,6 +9,9 @@
 #include "FaraRotation_Pins.h"
 #include "FaraRotation_Settings.h"
 #include "FaraRotation_Commands.h"
+
+#include "Maidenhead.h"
+#include "moon2.h"
 
 /*-------- VARIABLES --------*/
 CONTROL_PORT_SERIAL_PORT_CLASS *control_port;
@@ -32,10 +35,21 @@ struct Conf {
   char Grid[7]; // Max 6 characters
 }; Conf configuration_data;
 
+double MyLong;
+double MyLat;
+
 void setup() {
   initialize_serial();
   initialize_pins();
-  initialize_eeprom();  
+  initialize_eeprom();
+  grid2deg(configuration_data.Grid, &MyLong, &MyLat);
+  #ifdef DEBUG
+    control_port->println (CODE_VERSION);
+    control_port->print (F("My Long: "));
+    control_port->print (String(MyLong,4));
+    control_port->print (F("\tMy Lat: "));
+    control_port->println (String(MyLat,4));
+  #endif
 }
 
 void loop() {
@@ -442,5 +456,3 @@ void nextion_show_angle(int degrees, unsigned int antenna) {
   }
 }
 
-#include "Maidenhead.h"
-#include "moon2.h"
