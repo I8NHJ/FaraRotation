@@ -1,6 +1,6 @@
 #define CODE_VERSION __DATE__ " " __TIME__ " N5NHJ"
 
-#define DEBUG
+// #define DEBUG
 
 #define CONTROL_PORT_SERIAL_PORT_CLASS HardwareSerial
 #define NEXTION_PORT_SERIAL_PORT_CLASS HardwareSerial
