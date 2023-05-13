@@ -2,8 +2,10 @@
 const char STOP[]  = "*0";
 const char ROTATE_RX_ANTENNA_CW[]      = "*RRX1";
 const char ROTATE_RX_ANTENNA_CCW[]     = "*RRX2";
+const char ROTATE_RX_ANTENNA_TO[]      = "*GRX";
 const char ROTATE_TX_ANTENNA_CW[]      = "*RTX1";
 const char ROTATE_TX_ANTENNA_CCW[]     = "*RTX2";
+const char ROTATE_TX_ANTENNA_TO[]      = "*GTX";
 const char SYNC_TX_2_RX_ENABLE[]       = "*SRXTX1";
 const char SYNC_TX_2_RX_DISABLE[]      = "*SRXTX0";
 const char LINK_RX_AND_TX_ENABLE[]     = "*LRXTX1";
