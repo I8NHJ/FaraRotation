@@ -10,6 +10,7 @@ const char SYNC_TX_2_RX_ENABLE[]       = "*SRXTX1";
 const char SYNC_TX_2_RX_DISABLE[]      = "*SRXTX0";
 const char LINK_RX_AND_TX_ENABLE[]     = "*LRXTX1";
 const char LINK_RX_AND_TX_DISABLE[]    = "*LRXTX0";
+const char SET_TARGET_GRID[]           = "*TG";
 const char PTT_AUTOMATION_ENABLED[]    = "*PTT1";
 const char PTT_AUTOMATION_DISABLED[]   = "*PTT0";
 const char CALIBRATE_RX_ANTENNA_CW[]   = "*CRX1";

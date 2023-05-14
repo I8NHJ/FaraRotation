@@ -1,11 +1,13 @@
 #define CODE_VERSION __DATE__ " " __TIME__ " N5NHJ"
 
-// #define DEBUG
+#define DEBUG
 
 #define CONTROL_PORT_SERIAL_PORT_CLASS HardwareSerial
 #define NEXTION_PORT_SERIAL_PORT_CLASS HardwareSerial
 
 #include <EEPROM.h>
+#include <RTClib.h>
+
 #include "FaraRotation_Pins.h"
 #include "FaraRotation_Settings.h"
 #include "FaraRotation_Commands.h"
@@ -28,6 +30,9 @@ byte incoming_nextion_port_byte = 0;
 int nextion_port_buffer_index = 0;
 unsigned long last_nextion_port_receive_time = 0;
 unsigned long last_degrees_reading_time = 0;
+
+RTC_DS3231 rtc;
+
 struct Conf {
   unsigned int Analog_CCW[2];
   unsigned int Analog_CW[2];
@@ -37,19 +42,53 @@ struct Conf {
 
 double MyLong;
 double MyLat;
+double TargetLong;
+double TargetLat;
+DateTime now;
+
+unsigned int Year;
+unsigned int Month;
+unsigned int Day;
+double UTCTime;
+double MoonRAscension;                                       //Moon right ascension
+double MoonDeclination;
+double TopRAscension;
+double TopDeclination;
+double LST;
+double HA;
+double MoonAz;
+double MoonEl;
+double MoonDist;
+
 
 void setup() {
   initialize_serial();
   initialize_pins();
   initialize_eeprom();
+  initialize_rtc();
   grid2deg(configuration_data.Grid, &MyLong, &MyLat);
-#ifdef DEBUG
-  control_port->println(CODE_VERSION);
-  control_port->print(F("My Long: "));
-  control_port->print(String(MyLong, 4));
-  control_port->print(F("\tMy Lat: "));
-  control_port->println(String(MyLat, 4));
-#endif
+  moon2(Year, Month, Day, UTCTime, MyLong, MyLat, &MoonRAscension, &MoonDeclination, &TopRAscension, &TopDeclination, &LST, &HA, &MoonAz, &MoonEl, &MoonDist);
+  #ifdef DEBUG
+    control_port->println(CODE_VERSION);
+    control_port->print(F("My Long: "));
+    control_port->print(String(MyLong, 4));
+    control_port->print(F("\tMy Lat: "));
+    control_port->println(String(MyLat, 4));
+    control_port->print(F("Date: "));
+    control_port->print(String(Year));
+    control_port->print(F("/"));
+    control_port->print(String(Month));
+    control_port->print(F("/"));
+    control_port->print(String(Day));
+    control_port->print(F(" "));
+    control_port->println(String(UTCTime));
+    control_port->print(F("Moon Azimuth: "));
+    control_port->print(String(MoonAz));
+    control_port->print(F("\tElevation: "));
+    control_port->print(String(MoonEl));
+    control_port->print(F("\tDistance: "));
+    control_port->println(String(MoonDist));
+  #endif
 }
 
 void loop() {
@@ -139,6 +178,22 @@ void initialize_pins() {
   digitalWrite(tx_rotate_cw_enable, HIGH);
   digitalWrite(tx_rotate_ccw_enable, HIGH);
 } /* END initialize_pins() */
+
+void initialize_rtc() {
+  if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    Serial.flush();
+    while (1) delay(10);
+  }
+  now = rtc.now();
+  Year = now.year();
+  Month = now.month();
+  Day = now.day();
+  UTCTime=(now.hour()+(now.minute()/60.));
+  #ifdef DEBUG
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  #endif
+} /* END initialize_rtc() */
 
 void check_nextion_port_for_commands() {
   if (nextion_port->available()) {
@@ -291,7 +346,7 @@ void check_nextion_port_for_commands() {
         strcat(workstring, configuration_data.Callsign);
         strcat(workstring, "\"");
         send_nextion_message(workstring);
-        strcpy(workstring, "grid.txt=\"");
+        strcpy(workstring, "gMyGrid.txt=\"");
         strcat(workstring, configuration_data.Grid);
         strcat(workstring, "\"");
         send_nextion_message(workstring);
