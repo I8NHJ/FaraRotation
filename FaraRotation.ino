@@ -30,6 +30,7 @@ byte incoming_nextion_port_byte = 0;
 int nextion_port_buffer_index = 0;
 unsigned long last_nextion_port_receive_time = 0;
 unsigned long last_degrees_reading_time = 0;
+unsigned long last_info_sending_time = 0;
 
 RTC_DS3231 rtc;
 
@@ -40,16 +41,15 @@ struct Conf {
   char Grid[7];       // Max 6 characters
 } configuration_data;
 
-double MyLong;
-double MyLat;
-double TargetLong;
-double TargetLat;
 DateTime now;
 
 unsigned int Year;
 unsigned int Month;
 unsigned int Day;
 double UTCTime;
+
+double MyLong;
+double MyLat;
 double MoonRAscension;                                       //Moon right ascension
 double MoonDeclination;
 double TopRAscension;
@@ -59,6 +59,19 @@ double HA;
 double MoonAz;
 double MoonEl;
 double MoonDist;
+
+char TargetGrid[7];       // Max 6 characters
+double TargetLong;
+double TargetLat;
+double TargetMoonRAscension;                                       //Moon right ascension
+double TargetMoonDeclination;
+double TargetTopRAscension;
+double TargetTopDeclination;
+double TargetLST;
+double TargetHA;
+double TargetMoonAz;
+double TargetMoonEl;
+double TargetMoonDist;
 
 
 void setup() {
@@ -94,9 +107,20 @@ void setup() {
 void loop() {
   check_nextion_port_for_commands();
   read_degrees();
+  send_info();
 }
 
 /*-------- SUBROUTINES --------*/
+void send_info() {
+  if ((millis() - last_info_sending_time) > INFO_SENDING_RATE) {
+  // add logic here
+    #ifdef DEBUG
+      control_port->println(F("Sending Info Data"));
+    #endif
+    last_info_sending_time = millis();
+  }
+} /* END send_info() */
+
 void initialize_eeprom() {
   byte value = EEPROM.read(0);
   if (value != 1) {
@@ -185,14 +209,14 @@ void initialize_rtc() {
     Serial.flush();
     while (1) delay(10);
   }
+  #ifdef DEBUG
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  #endif
   now = rtc.now();
   Year = now.year();
   Month = now.month();
   Day = now.day();
-  UTCTime=(now.hour()+(now.minute()/60.));
-  #ifdef DEBUG
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  #endif
+  UTCTime=((now.hour()+UTCDIFF)+(now.minute()/60.));
 } /* END initialize_rtc() */
 
 void check_nextion_port_for_commands() {
@@ -236,6 +260,17 @@ void check_nextion_port_for_commands() {
         #endif
       }  // COMMAND ROTATE_RX_ANTENNA_CCW
 
+      if (nextion_received_command.substring(0, 4) == ROTATE_RX_ANTENNA_TO) {
+        command_received = true;
+        int DegreesTo = atoi(nextion_received_command.substring(4).c_str());
+        // ROTATE_RX_ANTENNA_TO LOGIC GOES HERE
+        #ifdef DEBUG
+          control_port->println(F("nextion_port ROTATE RX ANTENNA TO command received"));
+          control_port->print(F("ROTATING RX ANTENNA TO "));
+          control_port->println(DegreesTo);
+        #endif  
+      } // COMMAND ROTATE_RX_ANTENNA_TO
+
       if (nextion_received_command == ROTATE_TX_ANTENNA_CW) {
         command_received = true;
         stop_all();
@@ -253,6 +288,41 @@ void check_nextion_port_for_commands() {
           control_port->println(F("nextion_port ROTATE TX ANTENNA CCW command received"));
         #endif
       }  // COMMAND ROTATE_TX_ANTENNA_CCW
+
+      if (nextion_received_command.substring(0, 4) == ROTATE_TX_ANTENNA_TO) {
+        command_received = true;
+        int DegreesTo = atoi(nextion_received_command.substring(4).c_str());
+        // ROTATE_TX_ANTENNA_TO LOGIC GOES HERE
+        #ifdef DEBUG
+          control_port->println(F("nextion_port ROTATE TX ANTENNA TO command received"));
+          control_port->print(F("ROTATE TX ANTENNA TO "));
+          control_port->println(DegreesTo);
+        #endif  
+      } // COMMAND ROTATE_TX_ANTENNA_TO
+
+      if (nextion_received_command.substring(0, 3) == SET_TARGET_GRID) {
+        command_received = true;
+        strcpy (TargetGrid, nextion_received_command.substring(3).c_str());
+        initialize_rtc();
+        // Target Grid Logic Goes here
+        grid2deg(TargetGrid, &TargetLong, &TargetLat);
+        moon2(Year, Month, Day, UTCTime, TargetLong, TargetLat, &TargetMoonRAscension, &TargetMoonDeclination, &TargetTopRAscension, &TargetTopDeclination, &TargetLST, &TargetHA, &TargetMoonAz, &TargetMoonEl, &TargetMoonDist);
+        #ifdef DEBUG
+          control_port->println(F("nextion_port SET_TARGET_GRID command received"));
+          control_port->print("TARGET GRID: ");
+          control_port->println(TargetGrid);
+          control_port->print(F("Target Long: "));
+          control_port->print(String(TargetLong, 4));
+          control_port->print(F("\tTarget Lat: "));
+          control_port->println(String(TargetLat, 4));
+          control_port->print(F("Target Moon Azimuth: "));
+          control_port->print(String(TargetMoonAz));
+          control_port->print(F("\tTarget Elevation: "));
+          control_port->print(String(TargetMoonEl));
+          control_port->print(F("\tTarget Distance: "));
+          control_port->println(String(TargetMoonDist));
+        #endif
+      }  // COMMAND SET_TARGET_GRID
 
       if (nextion_received_command == SYNC_TX_2_RX_ENABLE) {
         command_received = true;
@@ -389,15 +459,11 @@ void check_nextion_port_for_commands() {
       if (nextion_received_command.substring(0, 3) == SAVE_GRID_TO_EEPROM) {
         command_received = true;
         strcpy(configuration_data.Grid, nextion_received_command.substring(3).c_str());
-        #ifdef DEBUG
-          control_port->print("nextion command: ");
-          control_port->println(nextion_received_command);
-          control_port->print("GRID to EEPROM: ");
-          control_port->println(configuration_data.Grid);
-        #endif
         EEPROM.put(1, configuration_data);
         #ifdef DEBUG
           control_port->println(F("nextion_port SAVE_GRID_TO_EEPROM command received"));
+          control_port->print("GRID to EEPROM: ");
+          control_port->println(configuration_data.Grid);
         #endif
       }  // COMMAND SAVE_GRID_TO_EEPROM
 
@@ -413,89 +479,92 @@ void check_nextion_port_for_commands() {
 }  //END check_nextion_port()
 
 void stop_all() {
-#if defined(PWM_OUTPUT)
-  analogWrite(rx_rotate_cw_pwm, 0);
-  analogWrite(rx_rotate_ccw_pwm, 0);
-  analoglWrite(tx_rotate_cw_pwm, 0);
-  analogWrite(tx_rotate_ccw_pwm, 0);
-#endif
-#if defined(DIGITAL_OUTPUT)
-  digitalWrite(rx_rotate_cw_dig, LOW);
-  digitalWrite(rx_rotate_ccw_dig, LOW);
-  digitalWrite(tx_rotate_cw_dig, LOW);
-  digitalWrite(tx_rotate_ccw_dig, LOW);
-#endif
+  #if defined(PWM_OUTPUT)
+    analogWrite(rx_rotate_cw_pwm, 0);
+    analogWrite(rx_rotate_ccw_pwm, 0);
+    analoglWrite(tx_rotate_cw_pwm, 0);
+    analogWrite(tx_rotate_ccw_pwm, 0);
+  #endif
+  #if defined(DIGITAL_OUTPUT)
+    digitalWrite(rx_rotate_cw_dig, LOW);
+    digitalWrite(rx_rotate_ccw_dig, LOW);
+    digitalWrite(tx_rotate_cw_dig, LOW);
+    digitalWrite(tx_rotate_ccw_dig, LOW);
+  #endif
 } /* END stop_all() */
 
 void rotate_antenna(byte action, bool link) {
   stop_all();
-  test_pins();
+  #ifdef DEBUG
+    test_pins();
+  #endif
   switch (action) {
     case ROTATE_RX_ANTENNA_CW_ENU:
-#if defined(PWM_OUTPUT)
-      analogWrite(rx_rotate_cw_pwm, 255);
-      if (link) {
-        analogWrite(tx_rotate_cw_pwm, 255);
-      }
-#endif
-#if defined(DIGITAL_OUTPUT)
-      digitalWrite(rx_rotate_cw_dig, HIGH);
-      if (link) {
+      #if defined(PWM_OUTPUT)
+        analogWrite(rx_rotate_cw_pwm, 255);
+        if (link) {
+          analogWrite(tx_rotate_cw_pwm, 255);
+        }
+      #endif
+      #if defined(DIGITAL_OUTPUT)
+        digitalWrite(rx_rotate_cw_dig, HIGH);
+        if (link) {
         digitalWrite(tx_rotate_cw_dig, HIGH);
-      }
-#endif
+        }
+      #endif
       break;
 
     case ROTATE_RX_ANTENNA_CCW_ENU:
-#if defined(PWM_OUTPUT)
-      analogWrite(rx_rotate_ccw_pwm, 255);
-      if (link) {
-        analogWrite(tx_rotate_ccw_pwm, 255);
-      }
-#endif
-#if defined(DIGITAL_OUTPUT)
-      digitalWrite(rx_rotate_ccw_dig, HIGH);
-      if (link) {
+      #if defined(PWM_OUTPUT)
+        analogWrite(rx_rotate_ccw_pwm, 255);
+        if (link) {
+          analogWrite(tx_rotate_ccw_pwm, 255);
+        }
+      #endif
+      #if defined(DIGITAL_OUTPUT)
+        digitalWrite(rx_rotate_ccw_dig, HIGH);
+        if (link) {
         digitalWrite(tx_rotate_ccw_dig, HIGH);
-      }
-#endif
+        }
+      #endif
       break;
 
     case ROTATE_TX_ANTENNA_CW_ENU:
-#if defined(PWM_OUTPUT)
-      analogWrite(tx_rotate_cw_pwm, 255);
-      if (link) {
-        analogWrite(rx_rotate_cw_pwm, 255);
-      }
-#endif
-#if defined(DIGITAL_OUTPUT)
-      digitalWrite(tx_rotate_cw_dig, HIGH);
-      if (link) {
-        digitalWrite(rx_rotate_cw_dig, HIGH);
-      }
-#endif
+      #if defined(PWM_OUTPUT)
+        analogWrite(tx_rotate_cw_pwm, 255);
+        if (link) {
+          analogWrite(rx_rotate_cw_pwm, 255);
+        }
+      #endif
+      #if defined(DIGITAL_OUTPUT)
+        digitalWrite(tx_rotate_cw_dig, HIGH);
+        if (link) {
+          digitalWrite(rx_rotate_cw_dig, HIGH);
+        }
+      #endif
       break;
 
     case ROTATE_TX_ANTENNA_CCW_ENU:
-#if defined(PWM_OUTPUT)
-      analogWrite(tx_rotate_ccw_pwm, 255);
-      if (link) {
-        analogWrite(rx_rotate_ccw_pwm, 255);
-      }
-#endif
-#if defined(DIGITAL_OUTPUT)
-      digitalWrite(tx_rotate_ccw_dig, HIGH);
-      if (link) {
-        digitalWrite(rx_rotate_ccw_dig, HIGH);
-      }
-#endif
+      #if defined(PWM_OUTPUT)
+        analogWrite(tx_rotate_ccw_pwm, 255);
+        if (link) {
+          analogWrite(rx_rotate_ccw_pwm, 255);
+        }
+      #endif
+      #if defined(DIGITAL_OUTPUT)
+        digitalWrite(tx_rotate_ccw_dig, HIGH);
+        if (link) {
+          digitalWrite(rx_rotate_ccw_dig, HIGH);
+        }
+      #endif
       break;
   }
-  test_pins();
+  #ifdef DEBUG
+    test_pins();
+  #endif
 } /* END rotate_antenna() */
 
 void test_pins() {
-#ifdef DEBUG
   control_port->print("RX_CW ");
   control_port->print(String(digitalRead(rx_rotate_cw_dig)));
   control_port->print("\tRX_CCW ");
@@ -504,7 +573,6 @@ void test_pins() {
   control_port->print(String(digitalRead(tx_rotate_cw_dig)));
   control_port->print("\tTX_CCW ");
   control_port->println(String(digitalRead(tx_rotate_ccw_dig)));
-#endif
 } /* END test_pins() */
 
 void read_degrees() {
