@@ -14,6 +14,7 @@
 
 #include "Maidenhead.h"
 #include "moon2.h"
+#include "SpatialOffset.h"
 
 /*-------- VARIABLES --------*/
 CONTROL_PORT_SERIAL_PORT_CLASS *control_port;
@@ -41,7 +42,8 @@ struct Conf {
   char Grid[7];       // Max 6 characters
 } configuration_data;
 
-DateTime now;
+DateTime Now;
+char nowString[21] = "YYYY MMM DD hh:mm:ss";
 
 unsigned int Year;
 unsigned int Month;
@@ -56,9 +58,9 @@ double TopRAscension;
 double TopDeclination;
 double LST;
 double HA;
-double MoonAz;
-double MoonEl;
-double MoonDist;
+double MyMoonAz;
+double MyMoonEl;
+double MyMoonDist;
 
 char TargetGrid[7];       // Max 6 characters
 double TargetLong;
@@ -73,14 +75,19 @@ double TargetMoonAz;
 double TargetMoonEl;
 double TargetMoonDist;
 
+double MyPolarAngle;
+double TargetPolarAngle;
+double SpatialOffset;
+double TXFaradayAngle;
 
 void setup() {
   initialize_serial();
   initialize_pins();
   initialize_eeprom();
   initialize_rtc();
-  grid2deg(configuration_data.Grid, &MyLong, &MyLat);
-  moon2(Year, Month, Day, UTCTime, MyLong, MyLat, &MoonRAscension, &MoonDeclination, &TopRAscension, &TopDeclination, &LST, &HA, &MoonAz, &MoonEl, &MoonDist);
+  read_rtc();
+  initialize_geometry();
+
   #ifdef DEBUG
     control_port->println(CODE_VERSION);
     control_port->print(F("My Long: "));
@@ -96,11 +103,13 @@ void setup() {
     control_port->print(F(" "));
     control_port->println(String(UTCTime));
     control_port->print(F("Moon Azimuth: "));
-    control_port->print(String(MoonAz));
+    control_port->print(String(MyMoonAz));
     control_port->print(F("\tElevation: "));
-    control_port->print(String(MoonEl));
+    control_port->print(String(MyMoonEl));
     control_port->print(F("\tDistance: "));
-    control_port->println(String(MoonDist));
+    control_port->println(String(MyMoonDist));
+    control_port->print(F("My Polar Axis Angle: "));
+    control_port->println(String(MyPolarAngle));
   #endif
 }
 
@@ -111,11 +120,59 @@ void loop() {
 }
 
 /*-------- SUBROUTINES --------*/
+void initialize_geometry () {
+  grid2deg(configuration_data.Grid, &MyLong, &MyLat);
+  moon2(Year, Month, Day, UTCTime, MyLong, MyLat, &MoonRAscension, &MoonDeclination, &TopRAscension, &TopDeclination, &LST, &HA, &MyMoonAz, &MyMoonEl, &MyMoonDist);
+  PolarAxisOffset (MyLat, MyMoonAz, MyMoonEl, 0, 0, 0, &MyPolarAngle);
+} /* END initialize_geometry() */
+
+void calculate_geometry () {
+  moon2(Year, Month, Day, UTCTime, MyLong, MyLat, &MoonRAscension, &MoonDeclination, &TopRAscension, &TopDeclination, &LST, &HA, &MyMoonAz, &MyMoonEl, &MyMoonDist);
+  moon2(Year, Month, Day, UTCTime, TargetLong, TargetLat, &TargetMoonRAscension, &TargetMoonDeclination, &TargetTopRAscension, &TargetTopDeclination, &TargetLST, &TargetHA, &TargetMoonAz, &TargetMoonEl, &TargetMoonDist);
+  PolarAxisOffset (MyLat, MyMoonAz, MyMoonEl, TargetLat, TargetMoonAz, TargetMoonEl, &SpatialOffset);
+  FaradayOffset (double RXAngle, SpatialOffset, &TXFaradayAngle)
+} /* END calculate_geometry() */
+
 void send_info() {
   if ((millis() - last_info_sending_time) > INFO_SENDING_RATE) {
-  // add logic here
+      char workstring[30];
+      read_rtc();
+      calculate_geometry();
+      strcpy(workstring, "tCLOCK.txt=\"");
+      char nowString[]="YYYY MMM DD hh:mm:ss";
+      strcat(workstring, Now.toString(nowString));
+      strcat(workstring, "\"");
+      send_nextion_message(workstring);
+      strcpy(workstring, "tMyGrid.txt=\"");
+      strcat(workstring, configuration_data.Grid);
+      strcat(workstring, "\"");
+      send_nextion_message(workstring);
+      strcpy(workstring, "tMyMoonAZ.txt=\"");
+      strcat(workstring, String(MyMoonAz).c_str());
+      strcat(workstring, "\"");
+      send_nextion_message(workstring);
+      strcpy(workstring, "tMyMoonEL.txt=\"");
+      strcat(workstring, String(MyMoonEl).c_str());
+      strcat(workstring, "\"");
+      send_nextion_message(workstring);
+      strcpy(workstring, "tTargetGrid.txt=\"");
+      strcat(workstring, TargetGrid);
+      strcat(workstring, "\"");
+      send_nextion_message(workstring);
+      strcpy(workstring, "tTargetMoonAZ.txt=\"");
+      strcat(workstring, String(TargetMoonAz).c_str());
+      strcat(workstring, "\"");
+      send_nextion_message(workstring);
+      strcpy(workstring, "tTargetMoonEL.txt=\"");
+      strcat(workstring, String(TargetMoonEl).c_str());
+      strcat(workstring, "\"");
+      send_nextion_message(workstring);
+      strcpy(workstring, "tOffset.txt=\"");
+      strcat(workstring, String(SpatialOffset).c_str());
+      strcat(workstring, "\"");
+      send_nextion_message(workstring);
     #ifdef DEBUG
-      control_port->println(F("Sending Info Data"));
+      control_port->println(F("Sending Info Data to Nextion port"));
     #endif
     last_info_sending_time = millis();
   }
@@ -203,21 +260,29 @@ void initialize_pins() {
   digitalWrite(tx_rotate_ccw_enable, HIGH);
 } /* END initialize_pins() */
 
-void initialize_rtc() {
+void initialize_rtc(){
   if (! rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    Serial.flush();
+    #ifdef DEBUG
+      control_port->println(F("RTC can not be found"));
+    #endif
     while (1) delay(10);
   }
-  #ifdef DEBUG
+  if (! rtc.lostPower()) {
+    #ifdef DEBUG
+      control_port->println(F("RTC time reset"));
+    #endif
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  #endif
-  now = rtc.now();
-  Year = now.year();
-  Month = now.month();
-  Day = now.day();
-  UTCTime=((now.hour()+UTCDIFF)+(now.minute()/60.));
+  }
 } /* END initialize_rtc() */
+
+void read_rtc() {
+  Now = rtc.now() + TimeSpan(0,UTCDIFF,0,0);
+  Year = Now.year();
+  Month = Now.month();
+  Day = Now.day();
+  UTCTime=(Now.hour()+(Now.minute()/60.));
+//  UTCTime=((Now.hour()+UTCDIFF)+(Now.minute()/60.));
+} /* END read_rtc() */
 
 void check_nextion_port_for_commands() {
   if (nextion_port->available()) {
@@ -303,8 +368,7 @@ void check_nextion_port_for_commands() {
       if (nextion_received_command.substring(0, 3) == SET_TARGET_GRID) {
         command_received = true;
         strcpy (TargetGrid, nextion_received_command.substring(3).c_str());
-        initialize_rtc();
-        // Target Grid Logic Goes here
+        read_rtc();
         grid2deg(TargetGrid, &TargetLong, &TargetLat);
         moon2(Year, Month, Day, UTCTime, TargetLong, TargetLat, &TargetMoonRAscension, &TargetMoonDeclination, &TargetTopRAscension, &TargetTopDeclination, &TargetLST, &TargetHA, &TargetMoonAz, &TargetMoonEl, &TargetMoonDist);
         #ifdef DEBUG
