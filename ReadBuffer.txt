@@ -41,10 +41,6 @@ check_serial() callend in the main_loop
                   }
 
 
-// Serial Port Settings
-#define CONTROL_PORT_MAPPED_TO &Serial     // change this line to map the control port to a different serial port (Serial1, Serial2, etc.)
-#define CONTROL_PORT_BAUD_RATE 9600
-
 #if defined(FEATURE_REMOTE_UNIT_SLAVE) || defined(FEATURE_YAESU_EMULATION) || defined(FEATURE_EASYCOM_EMULATION) || defined(FEATURE_CLOCK) || defined(UNDER_DEVELOPMENT_REMOTE_UNIT_COMMANDS)
     control_port = CONTROL_PORT_MAPPED_TO;
     control_port->begin(CONTROL_PORT_BAUD_RATE);
