@@ -1,0 +1,116 @@
+byte process_backslash_command(byte input_buffer[], int input_buffer_index, byte source_port, byte include_response_code, char * return_string, byte input_source){
+
+
+
+    incoming_serial_byte = control_port->read();
+    last_serial_receive_time = millis();
+
+    if ((incoming_serial_byte > 96) && (incoming_serial_byte < 123)) {  // uppercase it
+      incoming_serial_byte = incoming_serial_byte - 32;
+    } 
+
+
+
+        if ((control_port_buffer[0] == '\\') || (control_port_buffer[0] == '/') || ((control_port_buffer_index == 0) && ((incoming_serial_byte == '\\') || (incoming_serial_byte == '/')))) {
+          // if it's a backslash command add it to the buffer if it's not a line feed or carriage return
+          if ((incoming_serial_byte != 10) && (incoming_serial_byte != 13)) { 
+            control_port_buffer[control_port_buffer_index] = incoming_serial_byte;
+            control_port_buffer_index++;
+          }
+
+
+#define COMMAND_BUFFER_SIZE 50    
+byte control_port_buffer[COMMAND_BUFFER_SIZE];
+int control_port_buffer_index = 0;
+
+void clear_command_buffer(){
+  control_port_buffer_index = 0;
+  control_port_buffer[0] = 0;
+}
+
+ 
+check_serial() callend in the main_loop
+
+
+
+               check_serial(){
+                if (control_port->available()){ // is there also 'EL ' waiting for us in the buffer?
+                  start_time_hack = millis();
+                  while ( (control_port->available()) && ((millis() - start_time_hack) < 200) ) {
+                    control_port->read();
+                  }
+
+
+// Serial Port Settings
+#define CONTROL_PORT_MAPPED_TO &Serial     // change this line to map the control port to a different serial port (Serial1, Serial2, etc.)
+#define CONTROL_PORT_BAUD_RATE 9600
+
+#if defined(FEATURE_REMOTE_UNIT_SLAVE) || defined(FEATURE_YAESU_EMULATION) || defined(FEATURE_EASYCOM_EMULATION) || defined(FEATURE_CLOCK) || defined(UNDER_DEVELOPMENT_REMOTE_UNIT_COMMANDS)
+    control_port = CONTROL_PORT_MAPPED_TO;
+    control_port->begin(CONTROL_PORT_BAUD_RATE);
+    #if defined(OPTION_SEND_STRING_OUT_CONTROL_PORT_WHEN_INITIALIZING)
+      control_port->print OPTION_SEND_STRING_OUT_CONTROL_PORT_WHEN_INITIALIZING_STRING;
+    #endif
+
+
+
+
+ raw_azimuth = float_map(analog_az, configuration.analog_az_full_ccw, configuration.analog_az_full_cw, configuration.azimuth_starting_point, (configuration.azimuth_starting_point + configuration.azimuth_rotation_capability));
+
+ // check rotation target --------------------------------------------------------------------------------------------------------
+  if ((az_state != IDLE) && (az_request_queue_state == IN_PROGRESS_TO_TARGET) ) {
+    if ((az_state == NORMAL_CW) || (az_state == SLOW_START_CW) || (az_state == SLOW_DOWN_CW)) {
+      if ((abs(raw_azimuth - target_raw_azimuth) < (AZIMUTH_TOLERANCE)) || ((raw_azimuth > target_raw_azimuth) && ((raw_azimuth - target_raw_azimuth) < ((AZIMUTH_TOLERANCE + 5))))) {
+        delay(50);
+        read_azimuth(0);
+        if ((abs(raw_azimuth - target_raw_azimuth) < (AZIMUTH_TOLERANCE)) || ((raw_azimuth > target_raw_azimuth) && ((raw_azimuth - target_raw_azimuth) < ((AZIMUTH_TOLERANCE + 5))))) {
+          rotator(DEACTIVATE, CW, 10);
+          rotator(DEACTIVATE, CCW, 10);
+          az_state = IDLE;
+          az_request_queue_state = NONE;
+          #ifdef DEBUG_SERVICE_ROTATION
+            debug.print("service_rotation: IDLE");
+          #endif // DEBUG_SERVICE_ROTATION
+
+          #if defined(FEATURE_PARK) && !defined(FEATURE_ELEVATION_CONTROL)
+            if (park_status == PARK_INITIATED) {
+              park_status = PARKED;
+            }
+          #endif // defined(FEATURE_PARK) && !defined(FEATURE_ELEVATION_CONTROL)
+
+          #if defined(FEATURE_PARK) && defined(FEATURE_ELEVATION_CONTROL)
+            if ((park_status == PARK_INITIATED) && (el_state == IDLE)) {
+              park_status = PARKED;
+            }
+          #endif // defined(FEATURE_PARK) && !defined(FEATURE_ELEVATION_CONTROL)
+
+          #if defined(FEATURE_AUDIBLE_ALERT)
+            if (configuration.audible_alert_enabled_az_target){
+              audible_alert(AUDIBLE_ALERT_ACTIVATE);
+            }
+          #endif
+
+        }
+      }
+
+
+            if (rotate_ccw_pwm) {
+              analogWriteEnhanced(rotate_ccw_pwm, 0); digitalWriteEnhanced(rotate_ccw_pwm, LOW);
+            }
+
+
+
+void analogWriteEnhanced(uint8_t pin, int writevalue){
+
+
+  #if !defined(FEATURE_MASTER_WITH_SERIAL_SLAVE) && !defined(FEATURE_MASTER_WITH_ETHERNET_SLAVE)
+    analogWrite(pin, writevalue);
+  #else
+    if (pin < 100) {
+      analogWrite(pin, writevalue);
+    } else {
+      submit_remote_command(REMOTE_UNIT_AW_COMMAND, pin, writevalue);
+    }
+  #endif // !defined(FEATURE_MASTER_WITH_SERIAL_SLAVE) && !defined(FEATURE_MASTER_WITH_ETHERNET_SLAVE)
+
+}
