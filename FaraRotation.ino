@@ -11,6 +11,7 @@
 #include "FaraRotation_Pins.h"
 #include "FaraRotation_Settings.h"
 #include "FaraRotation_Commands.h"
+#include "FaraRotation_Enums.h"
 
 #include "Maidenhead.h"
 #include "moon2.h"
@@ -29,9 +30,11 @@ NEXTION_PORT_SERIAL_PORT_CLASS *nextion_port;
 char nextion_port_buffer[COMMAND_BUFFER_SIZE];
 byte incoming_nextion_port_byte = 0;
 int nextion_port_buffer_index = 0;
+
 unsigned long last_nextion_port_receive_time = 0;
 unsigned long last_degrees_reading_time = 0;
 unsigned long last_info_sending_time = 0;
+unsigned long last_rtc_reading_time = 0;
 
 RTC_DS3231 rtc;
 
@@ -85,7 +88,7 @@ void setup() {
   initialize_pins();
   initialize_eeprom();
   initialize_rtc();
-  read_rtc();
+  read_rtc(READ_RTC_NOW);
   initialize_geometry();
 
   #ifdef DEBUG
@@ -116,6 +119,7 @@ void setup() {
 void loop() {
   check_nextion_port_for_commands();
   read_degrees();
+  read_rtc(0);
   send_info();
 }
 
@@ -126,51 +130,56 @@ void initialize_geometry () {
   PolarAxisOffset (MyLat, MyMoonAz, MyMoonEl, 0, 0, 0, &MyPolarAngle);
 } /* END initialize_geometry() */
 
-void calculate_geometry () {
+void calculate_geometry () {  
   moon2(Year, Month, Day, UTCTime, MyLong, MyLat, &MoonRAscension, &MoonDeclination, &TopRAscension, &TopDeclination, &LST, &HA, &MyMoonAz, &MyMoonEl, &MyMoonDist);
   moon2(Year, Month, Day, UTCTime, TargetLong, TargetLat, &TargetMoonRAscension, &TargetMoonDeclination, &TargetTopRAscension, &TargetTopDeclination, &TargetLST, &TargetHA, &TargetMoonAz, &TargetMoonEl, &TargetMoonDist);
   PolarAxisOffset (MyLat, MyMoonAz, MyMoonEl, TargetLat, TargetMoonAz, TargetMoonEl, &SpatialOffset);
-  FaradayOffset (double RXAngle, SpatialOffset, &TXFaradayAngle)
+  double RXAngle; //to be read from antenna position!
+  FaradayOffset (RXAngle, SpatialOffset, &TXFaradayAngle);
 } /* END calculate_geometry() */
 
 void send_info() {
   if ((millis() - last_info_sending_time) > INFO_SENDING_RATE) {
-      char workstring[30];
-      read_rtc();
-      calculate_geometry();
-      strcpy(workstring, "tCLOCK.txt=\"");
-      char nowString[]="YYYY MMM DD hh:mm:ss";
-      strcat(workstring, Now.toString(nowString));
-      strcat(workstring, "\"");
-      send_nextion_message(workstring);
-      strcpy(workstring, "tMyGrid.txt=\"");
-      strcat(workstring, configuration_data.Grid);
-      strcat(workstring, "\"");
-      send_nextion_message(workstring);
-      strcpy(workstring, "tMyMoonAZ.txt=\"");
-      strcat(workstring, String(MyMoonAz).c_str());
-      strcat(workstring, "\"");
-      send_nextion_message(workstring);
-      strcpy(workstring, "tMyMoonEL.txt=\"");
-      strcat(workstring, String(MyMoonEl).c_str());
-      strcat(workstring, "\"");
-      send_nextion_message(workstring);
-      strcpy(workstring, "tTargetGrid.txt=\"");
-      strcat(workstring, TargetGrid);
-      strcat(workstring, "\"");
-      send_nextion_message(workstring);
-      strcpy(workstring, "tTargetMoonAZ.txt=\"");
-      strcat(workstring, String(TargetMoonAz).c_str());
-      strcat(workstring, "\"");
-      send_nextion_message(workstring);
-      strcpy(workstring, "tTargetMoonEL.txt=\"");
-      strcat(workstring, String(TargetMoonEl).c_str());
-      strcat(workstring, "\"");
-      send_nextion_message(workstring);
-      strcpy(workstring, "tOffset.txt=\"");
-      strcat(workstring, String(SpatialOffset).c_str());
-      strcat(workstring, "\"");
-      send_nextion_message(workstring);
+    char workstring[30];
+    read_rtc(READ_RTC_NOW);
+    calculate_geometry();
+    strcpy(workstring, "tCLOCK.txt=\"");
+    char nowString[]="YYYY MMM DD hh:mm:ss";
+    strcat(workstring, Now.toString(nowString));
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tMyGrid.txt=\"");
+    strcat(workstring, configuration_data.Grid);
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tMyMoonAZ.txt=\"");
+    strcat(workstring, String(MyMoonAz).c_str());
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tMyMoonEL.txt=\"");
+    strcat(workstring, String(MyMoonEl).c_str());
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tTargetGrid.txt=\"");
+    strcat(workstring, TargetGrid);
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tTargetMoonAZ.txt=\"");
+    strcat(workstring, String(TargetMoonAz).c_str());
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tTargetMoonEL.txt=\"");
+    strcat(workstring, String(TargetMoonEl).c_str());
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tOffset.txt=\"");
+    strcat(workstring, String(SpatialOffset).c_str());
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tTXFaradayAngle.txt=\"");
+    strcat(workstring, String(TXFaradayAngle).c_str());
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);    
     #ifdef DEBUG
       control_port->println(F("Sending Info Data to Nextion port"));
     #endif
@@ -275,12 +284,15 @@ void initialize_rtc(){
   }
 } /* END initialize_rtc() */
 
-void read_rtc() {
-  Now = rtc.now() + TimeSpan(0,UTCDIFF,0,0);
-  Year = Now.year();
-  Month = Now.month();
-  Day = Now.day();
-  UTCTime=(Now.hour()+(Now.minute()/60.));
+void read_rtc(bool read_now) {
+  if ( (millis() - last_rtc_reading_time) > RTC_READING_RATE || (read_now)) {
+    Now = rtc.now() + TimeSpan(0,UTCDIFF,0,0);
+    Year = Now.year();
+    Month = Now.month();
+    Day = Now.day();
+    UTCTime=(Now.hour()+(Now.minute()/60.));
+    last_rtc_reading_time=millis();
+  }
 //  UTCTime=((Now.hour()+UTCDIFF)+(Now.minute()/60.));
 } /* END read_rtc() */
 
@@ -368,7 +380,7 @@ void check_nextion_port_for_commands() {
       if (nextion_received_command.substring(0, 3) == SET_TARGET_GRID) {
         command_received = true;
         strcpy (TargetGrid, nextion_received_command.substring(3).c_str());
-        read_rtc();
+        read_rtc(READ_RTC_NOW);
         grid2deg(TargetGrid, &TargetLong, &TargetLat);
         moon2(Year, Month, Day, UTCTime, TargetLong, TargetLat, &TargetMoonRAscension, &TargetMoonDeclination, &TargetTopRAscension, &TargetTopDeclination, &TargetLST, &TargetHA, &TargetMoonAz, &TargetMoonEl, &TargetMoonDist);
         #ifdef DEBUG

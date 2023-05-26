@@ -18,12 +18,12 @@
     if(*OffsetAngle > 90.0) {*OffsetAngle=*OffsetAngle-180.0;}
   }
 
-  void FaradayOffset (double RXAngle, double OffsetAngle, *TXAngle) {
-    if(OffsetAngle-RXAngle > 0) {
-      *TXAngle = OffsetAngle-RXAngle
+  void FaradayOffset (double RXAngle, double OffsetAngle, double *TXAngle) {
+    if(OffsetAngle - RXAngle > 0) {
+      *TXAngle = OffsetAngle - RXAngle;
       }
     else
       {
-      *TXAngle = OffSetAngle + RXAngle
+      *TXAngle = OffsetAngle + RXAngle;
     }
   }

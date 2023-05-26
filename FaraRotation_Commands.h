@@ -23,9 +23,3 @@ const char SEND_CONFIG[]               = "*CFG";                                
 
 // NEXTION COMMAND STRINGS
 const char NEXTION_POST_COMMAND[] = "ÿÿÿ";
-
-// COMMAND ENUMERATORS
-const byte ROTATE_RX_ANTENNA_CW_ENU  = 1;
-const byte ROTATE_RX_ANTENNA_CCW_ENU = 2;
-const byte ROTATE_TX_ANTENNA_CW_ENU  = 3;
-const byte ROTATE_TX_ANTENNA_CCW_ENU = 4;
