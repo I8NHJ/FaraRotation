@@ -1,6 +1,6 @@
 //      moon2(Year, Month, Day, UTCTime, MyLong, MyLat, &MoonRAscension, &MoonDeclination, &TopRAscension, &TopDeclination, &LST, &HA, &MoonAz, &MoonEl, &MoonDist);
 
-  void PolarAxisOffset (double MLat, double MAz, double MEl, double TLat, double TAz, double TEl, double *OffsetAngle) {
+  void PolarAxisOffset (double MLat, double MAz, double MEl, double TLat, double TAz, double TEl, int *OffsetAngle) {
     double rad = 57.2957795131;
     double Temp1;
     double Temp2;
@@ -13,17 +13,18 @@
     Temp2 = cos(TLat/rad) * sin (TAz/rad);
     double TPoloOffset = rad*atan2(Temp1, Temp2);
 
-    *OffsetAngle=fmod (MPoloOffset-TPoloOffset+720.0, 180.0);
+    *OffsetAngle=round(fmod (MPoloOffset-TPoloOffset+720.0, 180.0));
 
-    if(*OffsetAngle > 90.0) {*OffsetAngle=*OffsetAngle-180.0;}
+    if(*OffsetAngle > 90) {*OffsetAngle=*OffsetAngle-180;}
   }
 
-  void FaradayOffset (double RXAngle, double OffsetAngle, double *TXAngle) {
-    if(OffsetAngle - RXAngle > 0) {
-      *TXAngle = OffsetAngle - RXAngle;
+  void FaradayOffset (int RXAngle, int OffsetAngle, int *TXAngle) {
+    int Angle = OffsetAngle - RXAngle;
+    if(Angle >= 0) {
+      *TXAngle = round(OffsetAngle - Angle);
       }
     else
       {
-      *TXAngle = OffsetAngle + RXAngle;
+      *TXAngle = round(OffsetAngle + Angle);
     }
   }
