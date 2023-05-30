@@ -21,3 +21,5 @@
 #define tx_button_cw 0              // normally open button to ground for manual CW rotation
 #define tx_button_ccw 0             // normally open button to ground for manual CCW rotation
 #define tx_rotator_degs_pin A1      // reads analog voltage from rotator
+
+#define ptt_link 2                  // If enabled activates automatic TX/RX sync rotation for Faraday compensation, 0 to disable 

@@ -1,6 +1,6 @@
 #define CODE_VERSION __DATE__ " " __TIME__ " N5NHJ"
 
-// #define DEBUG
+// define DEBUG
 
 #define CONTROL_PORT_SERIAL_PORT_CLASS HardwareSerial
 #define NEXTION_PORT_SERIAL_PORT_CLASS HardwareSerial
@@ -13,7 +13,7 @@
 #include "FaraRotation_Commands.h"
 #include "FaraRotation_Enums.h"
 
-#include "Maidenhead.h"
+// #include "Maidenhead.h"
 #include "moon2.h"
 #include "SpatialOffset.h"
 
@@ -24,7 +24,6 @@ char control_port_buffer[COMMAND_BUFFER_SIZE];
 byte incoming_control_port_byte = 0;
 int control_port_buffer_index = 0;
 unsigned long last_control_port_receive_time = 0;
-bool rotate_both = false;
 
 NEXTION_PORT_SERIAL_PORT_CLASS *nextion_port;
 char nextion_port_buffer[COMMAND_BUFFER_SIZE];
@@ -184,7 +183,16 @@ void send_info() {
     strcpy(workstring, "tTXFaradayDeg.txt=\"");
     strcat(workstring, String(TXFaradayAngle).c_str());
     strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tRXRotStatus.txt=\"");
+    //strcat(workstring, String(RX_ROTATION_STATUS).c_str());
+    strcat(workstring, ROTATION_STATUS_TEXT[RX_ROTATION_STATUS]);
+    strcat(workstring, "\"");
     send_nextion_message(workstring);    
+    strcpy(workstring, "tTXRotStatus.txt=\"");
+    strcat(workstring, ROTATION_STATUS_TEXT[TX_ROTATION_STATUS]);
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);        
     #ifdef DEBUG
       control_port->println(F("Sending Info Data to Nextion port"));
     #endif
@@ -242,6 +250,11 @@ void initialize_pins() {
   pinMode(rx_rotate_ccw_enable, OUTPUT);
   pinMode(tx_rotate_cw_enable, OUTPUT);
   pinMode(tx_rotate_ccw_enable, OUTPUT);
+  
+  if (ptt_link) {
+    pinMode(ptt_link, INPUT_PULLUP);
+  }
+  
   #if defined(PWM_OUTPUT)
     pinMode(rx_rotate_cw_pwm, OUTPUT);
     pinMode(rx_rotate_ccw_pwm, OUTPUT);
@@ -343,58 +356,59 @@ void stop(int antenna) {
   }
 } /* END stop() */
 
-void rotate_antenna(byte action, bool link) {
+void rotate_antenna(cmdenum action, rlnk rotate) {
+// void rotate_antenna(byte action, enum rlnk) {
   // stop(ALL_ANTENNAS);
   #ifdef DEBUG
     test_pins();
   #endif
   switch (action) {
-    case ROTATE_RX_ANTENNA_CW_ENU:
+    case ROTATE_RX_ANTENNA_CW_ENUM:
       #if defined(PWM_OUTPUT)
         analogWrite(rx_rotate_cw_pwm, 255);
-        if (link) {
+        if (ROTATE_BOTH) {
           analogWrite(tx_rotate_cw_pwm, 255);
         }
       #endif
       #if defined(DIGITAL_OUTPUT)
         digitalWrite(rx_rotate_cw_dig, HIGH);
-        if (link) {
+        if (ROTATE_BOTH) {
         digitalWrite(tx_rotate_cw_dig, HIGH);
         }
       #endif
-      break;
+    break;
 
-    case ROTATE_RX_ANTENNA_CCW_ENU:
+    case ROTATE_RX_ANTENNA_CCW_ENUM:
       #if defined(PWM_OUTPUT)
         analogWrite(rx_rotate_ccw_pwm, 255);
-        if (link) {
+        if (ROTATE_BOTH) {
           analogWrite(tx_rotate_ccw_pwm, 255);
         }
       #endif
       #if defined(DIGITAL_OUTPUT)
         digitalWrite(rx_rotate_ccw_dig, HIGH);
-        if (link) {
+        if (ROTATE_BOTH) {
         digitalWrite(tx_rotate_ccw_dig, HIGH);
         }
       #endif
-      break;
+    break;
 
-    case ROTATE_TX_ANTENNA_CW_ENU:
+    case ROTATE_TX_ANTENNA_CW_ENUM:
       #if defined(PWM_OUTPUT)
         analogWrite(tx_rotate_cw_pwm, 255);
-        if (link) {
+        if (ROTATE_BOTH) {
           analogWrite(rx_rotate_cw_pwm, 255);
         }
       #endif
       #if defined(DIGITAL_OUTPUT)
         digitalWrite(tx_rotate_cw_dig, HIGH);
-        if (link) {
+        if (ROTATE_BOTH) {
           digitalWrite(rx_rotate_cw_dig, HIGH);
         }
       #endif
-      break;
+    break;
 
-    case ROTATE_TX_ANTENNA_CCW_ENU:
+    case ROTATE_TX_ANTENNA_CCW_ENUM:
       #if defined(PWM_OUTPUT)
         analogWrite(tx_rotate_ccw_pwm, 255);
         if (link) {
@@ -403,11 +417,11 @@ void rotate_antenna(byte action, bool link) {
       #endif
       #if defined(DIGITAL_OUTPUT)
         digitalWrite(tx_rotate_ccw_dig, HIGH);
-        if (link) {
+        if (ROTATE_BOTH) {
           digitalWrite(rx_rotate_ccw_dig, HIGH);
         }
       #endif
-      break;
+    break;
   }
   #ifdef DEBUG
     test_pins();
@@ -455,9 +469,9 @@ void send_nextion_message(char message[30]) {
   nextion_port->write(0xFF);
   nextion_port->write(0xFF);
   nextion_port->write(0xFF);
-#ifdef DEBUG
-  control_port->println(message);
-#endif
+  #ifdef DEBUG
+    control_port->println(message);
+  #endif
 } /* END send_nextion_message*/
 
 void nextion_show_angle(int degrees, unsigned int antenna) {
@@ -488,7 +502,7 @@ void check_if_action_is_needed() {
   if (RX_ROTATION_STATUS != RX_IDLE || TX_ROTATION_STATUS != TX_IDLE) {
     if ((millis() - last_action_control_time) > ACTION_LOOP_RATE) {
 
-      if (RX_ROTATION_STATUS == RX_TO_TARGET_CW){
+      if (RX_ROTATION_STATUS == RX_TO_TARGET_CW) {
         if (RX_DegreesTo <= convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA)) {
           stop(RX_ANTENNA);
           RX_ROTATION_STATUS = RX_IDLE; 
@@ -500,9 +514,24 @@ void check_if_action_is_needed() {
           stop(RX_ANTENNA);
           RX_ROTATION_STATUS = RX_IDLE;
         }
-      }  
-    }
+      }
 
-    last_action_control_time = millis();
+      if (TX_ROTATION_STATUS == TX_TO_TARGET_CW) {
+        if (TX_DegreesTo <= convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA)) {
+          stop(TX_ANTENNA);
+          TX_ROTATION_STATUS = TX_IDLE;
+        } 
+      }
+
+      if (TX_ROTATION_STATUS == TX_TO_TARGET_CCW) {
+        if (TX_DegreesTo >= convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA)) {
+          stop(TX_ANTENNA);
+          TX_ROTATION_STATUS = TX_IDLE; 
+        }
+      }
+
+      last_action_control_time = millis();  
+    }
   }
-} /* END check_if_reaction_is_needed() */
+} /* END check_if_action_is_needed() */
+

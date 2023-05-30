@@ -19,12 +19,5 @@
   }
 
   void FaradayOffset (int RXAngle, int OffsetAngle, int *TXAngle) {
-    int Angle = OffsetAngle - RXAngle;
-    if(Angle >= 0) {
-      *TXAngle = round(OffsetAngle - Angle);
-      }
-    else
-      {
-      *TXAngle = round(OffsetAngle + Angle);
-    }
+    *TXAngle = OffsetAngle + (OffsetAngle - RXAngle);
   }
