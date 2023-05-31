@@ -22,7 +22,7 @@
 #define TX_ANTENNA 1
 #define ALL_ANTENNAS 3
 
-#define UTCDIFF 5
+#define UTCDIFF 0
 
 // #define PWM_OUTPUT
 #define DIGITAL_OUTPUT

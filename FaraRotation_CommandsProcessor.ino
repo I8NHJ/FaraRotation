@@ -47,6 +47,7 @@ void check_nextion_port_for_commands() {
       if (nextion_received_command.substring(0, 4) == ROTATE_RX_ANTENNA_TO) {
         command_received = true;
         COMMAND_ENUM = ROTATE_RX_ANTENNA_TO_ENUM;
+        stop(RX_ANTENNA);
         RX_DegreesTo = atoi(nextion_received_command.substring(4).c_str());
         int RX_Antenna_angle = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
         if (RX_DegreesTo < RX_Antenna_angle) {
@@ -89,6 +90,7 @@ void check_nextion_port_for_commands() {
       if (nextion_received_command.substring(0, 4) == ROTATE_TX_ANTENNA_TO) {
         command_received = true;
         COMMAND_ENUM = ROTATE_TX_ANTENNA_TO_ENUM;
+        stop(TX_ANTENNA);
         TX_DegreesTo = atoi(nextion_received_command.substring(4).c_str());
         int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
         if (TX_DegreesTo < TX_Antenna_angle) {
@@ -133,6 +135,7 @@ void check_nextion_port_for_commands() {
       if (nextion_received_command == SYNC_TX_2_RX_ENABLE) {
         command_received = true;
         COMMAND_ENUM = SYNC_TX_2_RX_ENABLE_ENUM;
+        stop(TX_ANTENNA);
         TX_DegreesTo = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
         int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
         if (TX_DegreesTo < TX_Antenna_angle) {
@@ -140,7 +143,7 @@ void check_nextion_port_for_commands() {
           rotate_antenna(ROTATE_TX_ANTENNA_CCW_ENUM, ROTATE_ONE);
         }
         else {
-          TX_ROTATION_STATUS =   TX_SYNC_TO_RX_CW;
+          TX_ROTATION_STATUS =  TX_SYNC_TO_RX_CW;
           rotate_antenna(ROTATE_TX_ANTENNA_CW_ENUM, ROTATE_ONE);
         }
         #ifdef DEBUG

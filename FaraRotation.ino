@@ -1,6 +1,6 @@
 #define CODE_VERSION __DATE__ " " __TIME__ " N5NHJ"
 
-// define DEBUG
+//#define DEBUG
 
 #define CONTROL_PORT_SERIAL_PORT_CLASS HardwareSerial
 #define NEXTION_PORT_SERIAL_PORT_CLASS HardwareSerial
@@ -184,15 +184,6 @@ void send_info() {
     strcat(workstring, String(TXFaradayAngle).c_str());
     strcat(workstring, "\"");
     send_nextion_message(workstring);
-    strcpy(workstring, "tRXRotStatus.txt=\"");
-    //strcat(workstring, String(RX_ROTATION_STATUS).c_str());
-    strcat(workstring, ROTATION_STATUS_TEXT[RX_ROTATION_STATUS]);
-    strcat(workstring, "\"");
-    send_nextion_message(workstring);    
-    strcpy(workstring, "tTXRotStatus.txt=\"");
-    strcat(workstring, ROTATION_STATUS_TEXT[TX_ROTATION_STATUS]);
-    strcat(workstring, "\"");
-    send_nextion_message(workstring);        
     #ifdef DEBUG
       control_port->println(F("Sending Info Data to Nextion port"));
     #endif
@@ -294,7 +285,7 @@ void initialize_rtc(){
     #endif
     while (1) delay(10);
   }
-  if (! rtc.lostPower()) {
+  if (rtc.lostPower()) {
     #ifdef DEBUG
       control_port->println(F("RTC time reset"));
     #endif
@@ -302,8 +293,8 @@ void initialize_rtc(){
   }
 } /* END initialize_rtc() */
 
-void read_rtc(rrc read_now) {
-  if ( (millis() - last_rtc_reading_time) > RTC_READING_RATE || (read_now)) {
+void read_rtc(rrc read) {
+  if ( (millis() - last_rtc_reading_time) > RTC_READING_RATE || (read == READ_RTC_NOW)) {
     Now = rtc.now() + TimeSpan(0,UTCDIFF,0,0);
     Year = Now.year();
     Month = Now.month();
@@ -366,14 +357,14 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
     case ROTATE_RX_ANTENNA_CW_ENUM:
       #if defined(PWM_OUTPUT)
         analogWrite(rx_rotate_cw_pwm, 255);
-        if (ROTATE_BOTH) {
+        if (rotate == ROTATE_BOTH) {
           analogWrite(tx_rotate_cw_pwm, 255);
         }
       #endif
       #if defined(DIGITAL_OUTPUT)
         digitalWrite(rx_rotate_cw_dig, HIGH);
-        if (ROTATE_BOTH) {
-        digitalWrite(tx_rotate_cw_dig, HIGH);
+          if (rotate == ROTATE_BOTH) {
+            digitalWrite(tx_rotate_cw_dig, HIGH);
         }
       #endif
     break;
@@ -381,14 +372,14 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
     case ROTATE_RX_ANTENNA_CCW_ENUM:
       #if defined(PWM_OUTPUT)
         analogWrite(rx_rotate_ccw_pwm, 255);
-        if (ROTATE_BOTH) {
+        if (rotate == ROTATE_BOTH) {
           analogWrite(tx_rotate_ccw_pwm, 255);
         }
       #endif
       #if defined(DIGITAL_OUTPUT)
         digitalWrite(rx_rotate_ccw_dig, HIGH);
-        if (ROTATE_BOTH) {
-        digitalWrite(tx_rotate_ccw_dig, HIGH);
+        if (rotate == ROTATE_BOTH) {
+          digitalWrite(tx_rotate_ccw_dig, HIGH);
         }
       #endif
     break;
@@ -396,13 +387,13 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
     case ROTATE_TX_ANTENNA_CW_ENUM:
       #if defined(PWM_OUTPUT)
         analogWrite(tx_rotate_cw_pwm, 255);
-        if (ROTATE_BOTH) {
+        if (rotate == ROTATE_BOTH) {
           analogWrite(rx_rotate_cw_pwm, 255);
         }
       #endif
       #if defined(DIGITAL_OUTPUT)
         digitalWrite(tx_rotate_cw_dig, HIGH);
-        if (ROTATE_BOTH) {
+        if (rotate == ROTATE_BOTH) {
           digitalWrite(rx_rotate_cw_dig, HIGH);
         }
       #endif
@@ -411,13 +402,13 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
     case ROTATE_TX_ANTENNA_CCW_ENUM:
       #if defined(PWM_OUTPUT)
         analogWrite(tx_rotate_ccw_pwm, 255);
-        if (link) {
+        if (rotate == ROTATE_BOTH) {
           analogWrite(rx_rotate_ccw_pwm, 255);
         }
       #endif
       #if defined(DIGITAL_OUTPUT)
         digitalWrite(tx_rotate_ccw_dig, HIGH);
-        if (ROTATE_BOTH) {
+        if (rotate == ROTATE_BOTH) {
           digitalWrite(rx_rotate_ccw_dig, HIGH);
         }
       #endif
@@ -445,9 +436,22 @@ void read_degrees() {
     nextion_show_angle(convert_analog_to_degrees(RX_Antenna_angle, RX_ANTENNA), RX_ANTENNA);
     unsigned int TX_Antenna_angle = analogRead(tx_rotator_degs_pin);
     nextion_show_angle(convert_analog_to_degrees(TX_Antenna_angle, TX_ANTENNA), TX_ANTENNA);
+    update_nextion_rotation_status();
     last_degrees_reading_time = millis();
   }
 } /* END read_degrees() */
+
+void update_nextion_rotation_status(){
+  char workstring[30];
+  strcpy(workstring, "tRXRotStatus.txt=\"");
+  strcat(workstring, ROTATION_STATUS_TEXT[RX_ROTATION_STATUS]);
+  strcat(workstring, "\"");
+  send_nextion_message(workstring);    
+  strcpy(workstring, "tTXRotStatus.txt=\"");
+  strcat(workstring, ROTATION_STATUS_TEXT[TX_ROTATION_STATUS]);
+  strcat(workstring, "\"");
+  send_nextion_message(workstring);        
+} /* END update_nextion_rotation_status() */
 
 int convert_analog_to_degrees(unsigned int analog_reading, unsigned int antenna) {
   if (analog_reading > configuration_data.Analog_CW[antenna]) {
@@ -516,14 +520,14 @@ void check_if_action_is_needed() {
         }
       }
 
-      if (TX_ROTATION_STATUS == TX_TO_TARGET_CW) {
+      if ((TX_ROTATION_STATUS == TX_TO_TARGET_CW) || (TX_ROTATION_STATUS == TX_SYNC_TO_RX_CW)) {
         if (TX_DegreesTo <= convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA)) {
           stop(TX_ANTENNA);
           TX_ROTATION_STATUS = TX_IDLE;
         } 
       }
 
-      if (TX_ROTATION_STATUS == TX_TO_TARGET_CCW) {
+      if ((TX_ROTATION_STATUS == TX_TO_TARGET_CCW) || (TX_ROTATION_STATUS == TX_SYNC_TO_RX_CCW)) {
         if (TX_DegreesTo >= convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA)) {
           stop(TX_ANTENNA);
           TX_ROTATION_STATUS = TX_IDLE; 
