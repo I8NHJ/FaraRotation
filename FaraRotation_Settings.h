@@ -1,5 +1,5 @@
-#define CALLSIGN "  N5NHJ  " // ATTENTION!: Max 9 characters
-#define GRID "EM13pc" // ATTENTION: Max 6 characters
+#define CALLSIGN "  N5NHJ  "          // ATTENTION!: Max 9 characters
+#define GRID "EM13pc"                 // ATTENTION: Max 6 characters
 
 // Serial Port Settings
 #define CONTROL_PORT_MAPPED_TO &Serial
@@ -18,7 +18,10 @@
 #define CONTROL_PORT_READ_RATE 500    // NOT IN USE
 #define NEXTION_PORT_READ_RATE 250    // Command loop timing (millisecs)
 
-#define UTCDIFF 0
+#define UTCDIFF 0                     // Time Difference between Real Time Clock and GMT 
 
 // #define PWM_OUTPUT
+// define SLOW_START_STOP
 #define DIGITAL_OUTPUT
+
+#define PTT_AUTOMATION

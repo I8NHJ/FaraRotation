@@ -1,3 +1,7 @@
+#define RX_ANTENNA 0
+#define TX_ANTENNA 1
+#define ALL_ANTENNAS 2
+
 // COMMAND ENUMERATORS
 enum cmdenum: byte {
   STOP_ENUM,
@@ -16,20 +20,11 @@ enum cmdenum: byte {
   PTT_AUTOMATION_DISABLED_ENUM
 } COMMAND_ENUM;
 
-// const byte ROTATE_RX_ANTENNA_CW_ENU  = 1;
-// const byte ROTATE_RX_ANTENNA_CCW_ENU = 2;
-// const byte ROTATE_TX_ANTENNA_CW_ENU  = 3;
-// const byte ROTATE_TX_ANTENNA_CCW_ENU = 4;
-
 // ANTENNA ROTATION SYNC
 enum rlnk: bool {
   ROTATE_ONE,
   ROTATE_BOTH
 } ROTATE_WHAT;
-
-#define RX_ANTENNA 0
-#define TX_ANTENNA 1
-#define ALL_ANTENNAS 2
 
 // READ THE RTC CLOCK NOW
 enum rrc: byte {
@@ -98,3 +93,17 @@ char ROTATION_STATUS_TEXT[][15] = {
   "SYNCING TX CCW",
 };
 
+byte running_status = {B00000000};
+// PTT ACTIVE
+// RX LINKED TO TX
+// 1 or 2 ANTENNAS
+// TX 2 RX (ACTIVATED/STOPPED)
+
+//theDisplay[3] |= (1 << bitnumber); // for setting the bit
+//theDisplay[3] &= ~(1 << bitnumber); // for clearing the bit
+//theDisplay[3] ^= (1 << bitnumber); // togling
+// bitSet(x, n)
+//
+// Parameters
+// x: the numeric variable whose bit to set.
+// n: which bit to set, starting at 0 for the least-significant (rightmost) bit.

@@ -2,10 +2,10 @@
 const char STOP[]                      = "*0";            // PLUS 1 char for antenna 0=RX, 1=TX, 2=ALL  // Completed
 const char ROTATE_RX_ANTENNA_CW[]      = "*RRX1";                                                       // Completed
 const char ROTATE_RX_ANTENNA_CCW[]     = "*RRX2";                                                       // Completed
-const char ROTATE_RX_ANTENNA_TO[]      = "*GRX";          // Plus up to 3 chars for degrees (-90/90) 3  // Enabled
+const char ROTATE_RX_ANTENNA_TO[]      = "*GRX";          // Plus up to 3 chars for degrees (-90/90) 3  // Completed
 const char ROTATE_TX_ANTENNA_CW[]      = "*RTX1";                                                       // Completed
 const char ROTATE_TX_ANTENNA_CCW[]     = "*RTX2";                                                       // Completed
-const char ROTATE_TX_ANTENNA_TO[]      = "*GTX";          // Plus up to 3 chars for degrees (-90/90) 3  // Enabled
+const char ROTATE_TX_ANTENNA_TO[]      = "*GTX";          // Plus up to 3 chars for degrees (-90/90) 3  // Completed
 const char SET_TARGET_GRID[]           = "*TG";           // Plus up to 6 chars for GRID                // Completed 
 const char SYNC_TX_2_RX_ENABLE[]       = "*SRXTX1";                                                     // Enabled, DO WE NEED A TOGLE? 
 const char SYNC_TX_2_RX_DISABLE[]      = "*SRXTX0";                                                     // Enabled, NO LOGIC, WE DON"T NEED IT IF IT IS NOT A TOGLE
