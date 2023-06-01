@@ -15,7 +15,7 @@
 
 // #include "Maidenhead.h"
 #include "moon2.h"
-#include "SpatialOffset.h"
+#include "FaraRotation_SpatialOffset.h"
 
 /*-------- VARIABLES --------*/
 CONTROL_PORT_SERIAL_PORT_CLASS *control_port;
@@ -35,6 +35,7 @@ unsigned long last_degrees_reading_time = 0;
 unsigned long last_info_sending_time = 0;
 unsigned long last_rtc_reading_time = 0;
 unsigned long last_action_control_time = 0;
+unsigned long last_status_sending_time = 0;
 
 RTC_DS3231 rtc;
 
@@ -124,10 +125,11 @@ void loop() {
   read_degrees();
   check_nextion_port_for_commands();
   check_if_action_is_needed();
-  send_info();
+  send_info_to_nextion();
+  send_status_to_nextion();
 }
 
-/*-------- SUBROUTINES --------*/
+/*-------- SUBROUTINES --------  INITIALIZATIONS  */
 
 void initialize_geometry () {
   grid2deg(configuration_data.Grid, &MyLong, &MyLat);
@@ -141,55 +143,6 @@ void calculate_geometry () {
   PolarAxisOffset (MyLat, MyMoonAz, MyMoonEl, TargetLat, TargetMoonAz, TargetMoonEl, &SpatialOffset);
   FaradayOffset (convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA), SpatialOffset, &TXFaradayAngle);
 } /* END calculate_geometry() */
-
-void send_info() {
-  if ((millis() - last_info_sending_time) > INFO_SENDING_RATE) {
-    char workstring[30];
-    read_rtc(READ_RTC_NOW);
-    calculate_geometry();
-    strcpy(workstring, "tCLOCK.txt=\"");
-    char nowString[]="YYYY MMM DD hh:mm:ss";
-    strcat(workstring, Now.toString(nowString));
-    strcat(workstring, "\"");
-    send_nextion_message(workstring);
-    strcpy(workstring, "tMyGrid.txt=\"");
-    strcat(workstring, configuration_data.Grid);
-    strcat(workstring, "\"");
-    send_nextion_message(workstring);
-    strcpy(workstring, "tMyMoonAZ.txt=\"");
-    strcat(workstring, String(MyMoonAz).c_str());
-    strcat(workstring, "\"");
-    send_nextion_message(workstring);
-    strcpy(workstring, "tMyMoonEL.txt=\"");
-    strcat(workstring, String(MyMoonEl).c_str());
-    strcat(workstring, "\"");
-    send_nextion_message(workstring);
-    strcpy(workstring, "tTargetGrid.txt=\"");
-    strcat(workstring, TargetGrid);
-    strcat(workstring, "\"");
-    send_nextion_message(workstring);
-    strcpy(workstring, "tTargetMoonAZ.txt=\"");
-    strcat(workstring, String(TargetMoonAz).c_str());
-    strcat(workstring, "\"");
-    send_nextion_message(workstring);
-    strcpy(workstring, "tTargetMoonEL.txt=\"");
-    strcat(workstring, String(TargetMoonEl).c_str());
-    strcat(workstring, "\"");
-    send_nextion_message(workstring);
-    strcpy(workstring, "tOffset.txt=\"");
-    strcat(workstring, String(SpatialOffset).c_str());
-    strcat(workstring, "\"");
-    send_nextion_message(workstring);
-    strcpy(workstring, "tTXFaradayDeg.txt=\"");
-    strcat(workstring, String(TXFaradayAngle).c_str());
-    strcat(workstring, "\"");
-    send_nextion_message(workstring);
-    #ifdef DEBUG
-      control_port->println(F("Sending Info Data to Nextion port"));
-    #endif
-    last_info_sending_time = millis();
-  }
-} /* END send_info() */
 
 void initialize_eeprom() {
   byte value = EEPROM.read(0);
@@ -242,8 +195,8 @@ void initialize_pins() {
   pinMode(tx_rotate_cw_enable, OUTPUT);
   pinMode(tx_rotate_ccw_enable, OUTPUT);
   
-  if (ptt_link) {
-    pinMode(ptt_link, INPUT_PULLUP);
+  if (ptt_automation) {
+    pinMode(ptt_automation, INPUT_PULLUP);
   }
   
   #if defined(PWM_OUTPUT)
@@ -293,6 +246,8 @@ void initialize_rtc(){
   }
 } /* END initialize_rtc() */
 
+/*-------- SUBROUTINES --------  FUNCTIONS AND ACTIONS  */
+
 void read_rtc(rrc read) {
   if ( (millis() - last_rtc_reading_time) > RTC_READING_RATE || (read == READ_RTC_NOW)) {
     Now = rtc.now() + TimeSpan(0,UTCDIFF,0,0);
@@ -306,12 +261,23 @@ void read_rtc(rrc read) {
 
 void stop(int antenna) {
   if (antenna == ALL_ANTENNAS) {
-    #if defined(PWM_OUTPUT) 
-      analogWrite(rx_rotate_cw_pwm, 0);
-      analogWrite(rx_rotate_ccw_pwm, 0);
-      analoglWrite(tx_rotate_cw_pwm, 0);
-      analogWrite(tx_rotate_ccw_pwm, 0);
+    #if defined (PWM_OUTPUT)
+      #if defined (SLOW_START_STOP)
+        for (byte i=192, i<=0, i=i-64) { 
+          analogWrite(rx_rotate_cw_pwm, i);
+          analogWrite(rx_rotate_ccw_pwm, i);
+          analogWrite(tx_rotate_cw_pwm, i);
+          analogWrite(tx_rotate_ccw_pwm, i);
+          delay (100);
+        }
+      #elif
+          analogWrite(rx_rotate_cw_pwm, 0);
+          analogWrite(rx_rotate_ccw_pwm, 0);
+          analogWrite(tx_rotate_cw_pwm, 0);
+          analogWrite(tx_rotate_ccw_pwm, 0);
+      #endif
     #endif
+
     #if defined(DIGITAL_OUTPUT) 
      digitalWrite(rx_rotate_cw_dig, LOW);
      digitalWrite(rx_rotate_ccw_dig, LOW);
@@ -348,8 +314,6 @@ void stop(int antenna) {
 } /* END stop() */
 
 void rotate_antenna(cmdenum action, rlnk rotate) {
-// void rotate_antenna(byte action, enum rlnk) {
-  // stop(ALL_ANTENNAS);
   #ifdef DEBUG
     test_pins();
   #endif
@@ -441,18 +405,6 @@ void read_degrees() {
   }
 } /* END read_degrees() */
 
-void update_nextion_rotation_status(){
-  char workstring[30];
-  strcpy(workstring, "tRXRotStatus.txt=\"");
-  strcat(workstring, ROTATION_STATUS_TEXT[RX_ROTATION_STATUS]);
-  strcat(workstring, "\"");
-  send_nextion_message(workstring);    
-  strcpy(workstring, "tTXRotStatus.txt=\"");
-  strcat(workstring, ROTATION_STATUS_TEXT[TX_ROTATION_STATUS]);
-  strcat(workstring, "\"");
-  send_nextion_message(workstring);        
-} /* END update_nextion_rotation_status() */
-
 int convert_analog_to_degrees(unsigned int analog_reading, unsigned int antenna) {
   if (analog_reading > configuration_data.Analog_CW[antenna]) {
     analog_reading = configuration_data.Analog_CW[antenna];
@@ -467,40 +419,6 @@ int convert_analog_to_degrees(unsigned int analog_reading, unsigned int antenna)
   // returns a number between -90 and 90 based on the low (ccw) and hi(cw) calibration points for the motor
   return round(((analog_reading - configuration_data.Analog_CCW[antenna]) / (float)(configuration_data.Analog_CW[antenna] - configuration_data.Analog_CCW[antenna]) * 180.0) - 90.0);
 }  // END convert_analog_to_degrees
-
-void send_nextion_message(char message[30]) {
-  nextion_port->print(message);
-  nextion_port->write(0xFF);
-  nextion_port->write(0xFF);
-  nextion_port->write(0xFF);
-  #ifdef DEBUG
-    control_port->println(message);
-  #endif
-} /* END send_nextion_message*/
-
-void nextion_show_angle(int degrees, unsigned int antenna) {
-  char workstring[30];
-  switch (antenna) {
-    case RX_ANTENNA:
-      strcpy(workstring, "vRXAngle.val=");
-      strcat(workstring, String(degrees).c_str());
-      send_nextion_message(workstring);
-      strcpy(workstring, "tRXAngle.txt=\"");
-      strcat(workstring, String(degrees).c_str());
-      strcat(workstring, "\"");
-      send_nextion_message(workstring);
-      break;
-      ;
-    case TX_ANTENNA:
-      strcpy(workstring, "vTXAngle.val=");
-      strcat(workstring, String(degrees).c_str());
-      send_nextion_message(workstring);
-      strcpy(workstring, "tTXAngle.txt=\"");
-      strcat(workstring, String(degrees).c_str());
-      strcat(workstring, "\"");
-      send_nextion_message(workstring);
-  }
-} /* END nextion_show_angle() */
 
 void check_if_action_is_needed() {
   if (RX_ROTATION_STATUS != RX_IDLE || TX_ROTATION_STATUS != TX_IDLE) {
@@ -538,4 +456,109 @@ void check_if_action_is_needed() {
     }
   }
 } /* END check_if_action_is_needed() */
+
+/*-------- SUBROUTINES --------  NEXTION RELATED  */
+
+void send_nextion_message(char message[30]) {
+  nextion_port->print(message);
+  nextion_port->write(0xFF);
+  nextion_port->write(0xFF);
+  nextion_port->write(0xFF);
+  #ifdef DEBUG
+    control_port->println(message);
+  #endif
+} /* END send_nextion_message*/
+
+void nextion_show_angle(int degrees, unsigned int antenna) {
+  char workstring[30];
+  switch (antenna) {
+    case RX_ANTENNA:
+      strcpy(workstring, "vRXAngle.val=");
+      strcat(workstring, String(degrees).c_str());
+      send_nextion_message(workstring);
+      strcpy(workstring, "tRXAngle.txt=\"");
+      strcat(workstring, String(degrees).c_str());
+      strcat(workstring, "\"");
+      send_nextion_message(workstring);
+      break;
+      ;
+    case TX_ANTENNA:
+      strcpy(workstring, "vTXAngle.val=");
+      strcat(workstring, String(degrees).c_str());
+      send_nextion_message(workstring);
+      strcpy(workstring, "tTXAngle.txt=\"");
+      strcat(workstring, String(degrees).c_str());
+      strcat(workstring, "\"");
+      send_nextion_message(workstring);
+  }
+} /* END nextion_show_angle() */
+
+void update_nextion_rotation_status(){
+  char workstring[30];
+  strcpy(workstring, "tRXRotStatus.txt=\"");
+  strcat(workstring, ROTATION_STATUS_TEXT[RX_ROTATION_STATUS]);
+  strcat(workstring, "\"");
+  send_nextion_message(workstring);    
+  strcpy(workstring, "tTXRotStatus.txt=\"");
+  strcat(workstring, ROTATION_STATUS_TEXT[TX_ROTATION_STATUS]);
+  strcat(workstring, "\"");
+  send_nextion_message(workstring);        
+} /* END update_nextion_rotation_status() */
+
+void send_info_to_nextion() {
+  if ((millis() - last_info_sending_time) > INFO_SENDING_RATE) {
+    char workstring[30];
+    read_rtc(READ_RTC_NOW);
+    calculate_geometry();
+    strcpy(workstring, "tCLOCK.txt=\"");
+    char nowString[]="YYYY MMM DD hh:mm:ss";
+    strcat(workstring, Now.toString(nowString));
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tMyGrid.txt=\"");
+    strcat(workstring, configuration_data.Grid);
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tMyMoonAZ.txt=\"");
+    strcat(workstring, String(MyMoonAz).c_str());
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tMyMoonEL.txt=\"");
+    strcat(workstring, String(MyMoonEl).c_str());
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tTargetGrid.txt=\"");
+    strcat(workstring, TargetGrid);
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tTargetMoonAZ.txt=\"");
+    strcat(workstring, String(TargetMoonAz).c_str());
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tTargetMoonEL.txt=\"");
+    strcat(workstring, String(TargetMoonEl).c_str());
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tOffset.txt=\"");
+    strcat(workstring, String(SpatialOffset).c_str());
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    strcpy(workstring, "tTXFaradayDeg.txt=\"");
+    strcat(workstring, String(TXFaradayAngle).c_str());
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    #ifdef DEBUG
+      control_port->println(F("Sending Info Data to Nextion port"));
+    #endif
+    last_info_sending_time = millis();
+  }
+} /* END send_info() */
+
+void send_status_to_nextion() {
+  if ((millis() - last_status_sending_time) > INFO_SENDING_RATE) {
+    last_status_sending_time = millis();
+  }
+}
+
+
 
