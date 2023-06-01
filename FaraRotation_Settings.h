@@ -18,10 +18,6 @@
 #define CONTROL_PORT_READ_RATE 500    // NOT IN USE
 #define NEXTION_PORT_READ_RATE 250    // Command loop timing (millisecs)
 
-#define RX_ANTENNA 0
-#define TX_ANTENNA 1
-#define ALL_ANTENNAS 3
-
 #define UTCDIFF 0
 
 // #define PWM_OUTPUT

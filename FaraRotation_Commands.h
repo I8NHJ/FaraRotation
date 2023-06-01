@@ -1,5 +1,5 @@
 // NEXTION CONTROL STRINGS
-const char STOP[]  = "*0";                                                                              // Completed
+const char STOP[]                      = "*0";            // PLUS 1 char for antenna 0=RX, 1=TX, 2=ALL  // Completed
 const char ROTATE_RX_ANTENNA_CW[]      = "*RRX1";                                                       // Completed
 const char ROTATE_RX_ANTENNA_CCW[]     = "*RRX2";                                                       // Completed
 const char ROTATE_RX_ANTENNA_TO[]      = "*GRX";          // Plus up to 3 chars for degrees (-90/90) 3  // Enabled

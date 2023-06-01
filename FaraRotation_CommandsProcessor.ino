@@ -13,10 +13,10 @@ void check_nextion_port_for_commands() {
         control_port->println(nextion_received_command);
       #endif
       
-      if (nextion_received_command == STOP) {
+      if (nextion_received_command.substring(0, 2) == STOP) {
         command_received = true;
         COMMAND_ENUM = STOP_ENUM;
-        stop(ALL_ANTENNAS);
+        stop(atoi(nextion_received_command.substring(2).c_str()));
         #ifdef DEBUG
           control_port->println(F("nextion_port STOP command received"));
         #endif

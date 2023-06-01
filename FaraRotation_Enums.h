@@ -27,6 +27,10 @@ enum rlnk: bool {
   ROTATE_BOTH
 } ROTATE_WHAT;
 
+#define RX_ANTENNA 0
+#define TX_ANTENNA 1
+#define ALL_ANTENNAS 2
+
 // READ THE RTC CLOCK NOW
 enum rrc: byte {
   TIMED_RTC_READ,
