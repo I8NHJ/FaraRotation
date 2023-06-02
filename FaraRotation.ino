@@ -263,14 +263,14 @@ void stop(int antenna) {
   if (antenna == ALL_ANTENNAS) {
     #if defined (PWM_OUTPUT)
       #if defined (SLOW_START_STOP)
-        for (byte i=192, i<=0, i=i-64) { 
+        for (byte i = 192; i <= 0; i = i - 64) { 
           analogWrite(rx_rotate_cw_pwm, i);
           analogWrite(rx_rotate_ccw_pwm, i);
           analogWrite(tx_rotate_cw_pwm, i);
           analogWrite(tx_rotate_ccw_pwm, i);
           delay (100);
         }
-      #elif
+      #else
           analogWrite(rx_rotate_cw_pwm, 0);
           analogWrite(rx_rotate_ccw_pwm, 0);
           analogWrite(tx_rotate_cw_pwm, 0);
@@ -558,7 +558,7 @@ void send_status_to_nextion() {
   if ((millis() - last_status_sending_time) > INFO_SENDING_RATE) {
     last_status_sending_time = millis();
   }
-}
+} /* END send_status _to_nextion() */
 
 
 
