@@ -19,17 +19,15 @@
 
 /*-------- VARIABLES --------*/
 CONTROL_PORT_SERIAL_PORT_CLASS *control_port;
-char control_port_buffer[COMMAND_BUFFER_SIZE];
+// char control_port_buffer[COMMAND_BUFFER_SIZE];
 // byte control_port_buffer[COMMAND_BUFFER_SIZE];
-byte incoming_control_port_byte = 0;
-int control_port_buffer_index = 0;
-unsigned long last_control_port_receive_time = 0;
 
 NEXTION_PORT_SERIAL_PORT_CLASS *nextion_port;
 char nextion_port_buffer[COMMAND_BUFFER_SIZE];
-byte incoming_nextion_port_byte = 0;
-int nextion_port_buffer_index = 0;
 
+byte active_features;
+
+unsigned long last_control_port_receive_time = 0;
 unsigned long last_nextion_port_receive_time = 0;
 unsigned long last_degrees_reading_time = 0;
 unsigned long last_info_sending_time = 0;
@@ -94,6 +92,7 @@ void setup() {
   initialize_rtc();
   read_rtc(READ_RTC_NOW);
   initialize_geometry();
+  initialize_features();
 
   #ifdef DEBUG
     control_port->println(CODE_VERSION);
@@ -130,6 +129,30 @@ void loop() {
 }
 
 /*-------- SUBROUTINES --------  INITIALIZATIONS  */
+
+void initialize_features () {
+// bit 0 <-> OUTPUT CONTROL   (0=DIGITAL, 1=PWM) 
+// bit 1 <-> SPEED CONTROL    (0=NO CONTROL, 1=SLOW START/STOP)
+// bit 2 <-> PTT AUTOMATION   (0=DISBLED, 1=ENABLED)
+// bit 3 <-> FUTURE EXPANSION (DEFAULT = 0)
+// bit 4 <-> TX LINKED TO RX (0=DISABLED, 1=ENABLED)
+// bit 5 <-> FUTURE EXPANSION (DEFAULT = 0)
+// bit 6 <-> FUTURE EXPANSION (DEFAULT = 0)
+// bit 7 <-> FUTURE EXPANSION (DEFAULT = 1)
+
+active_features = B10000000;
+
+  #if defined (PWM_OUTPUT)
+    bitWrite(active_features, 0, 1);
+    #if defined (SLOW_START_STOP)
+      bitWrite(active_features, 1, 1);
+    #endif    
+  #endif
+  #if defined (PTT_AUTOMATION)
+    bitWrite(active_features, 2, 1);
+  #endif  
+  control_port->println(active_features, BIN); 
+} /* END initialize_features() */
 
 void initialize_geometry () {
   grid2deg(configuration_data.Grid, &MyLong, &MyLat);
@@ -649,13 +672,19 @@ void send_info_to_nextion() {
 
 void send_status_to_nextion() {
   if ((millis() - last_status_sending_time) > INFO_SENDING_RATE) {
+    char workstring[30];
+    strcpy(workstring, "gStatus.txt=\"");
+    for (int i = 7; i >= 0; i--) {
+      strcat(workstring, String(bitRead(active_features, i)).c_str());
+    }
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);
+    // #ifdef DEBUG
+      control_port->println(F("Sending Status Data to Nextion port"));
+            control_port->println(workstring);
+    // #endif
     last_status_sending_time = millis();
-    //
-    // dobbiamo definire gli stati da riportare all HMI
-    // esempio PTT attivo
-    // SLOW start STOP
-    // TX LINKATO TO RX
-    //
+
   }
 } /* END send_status _to_nextion() */
 
