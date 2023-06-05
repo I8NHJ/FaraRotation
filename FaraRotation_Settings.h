@@ -20,8 +20,15 @@
 
 #define UTCDIFF 0                     // Time Difference between Real Time Clock and GMT 
 
-#define PWM_OUTPUT
-#define SLOW_START_STOP
 // #define DIGITAL_OUTPUT
+
+#define PWM_OUTPUT
+#define PWM_SPEED 255
+
+#define SLOW_START_STOP
+#define SLOW_START_STOP_MIN 50
+#define SLOW_START_STOP_DELAY 200
+#define SLOW_START_STOP_STEPS 50
+#define SLOW_START_STOP_PROXIMITY 3
 
 #define PTT_AUTOMATION

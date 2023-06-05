@@ -2,7 +2,7 @@
 #define rx_rotate_cw_enable 16      // goes high to activate rotator CW rotation
 #define rx_rotate_ccw_enable 17     // goes high to activate rotator CCW rotation
 #define rx_rotate_cw_ccw  0         // goes high for both CW and CCW rotation
-#define rx_rotate_cw_pwm 5          // optional - PWM CW output - set to 0 to disable (must be PWM capable pin) - JUST USE DIGITAL OR PWM
+#define rx_rotate_cw_pwm 5          // optional - PWM CW output - set to 0 to disable (must be PWM capable pin PWM: 2 to 13 and 44 to 46 for ATMEGA2560 REV 3. USE DIGITAL OR PWM ACCORDINGLY WITH Settings
 #define rx_rotate_ccw_pwm 6         // optional - PWM CCW output - set to 0 to disable (must be PWM capable pin)
 #define rx_rotate_cw_dig 5          // optional - DIGITAL CW output - set to 0 to disable (must be PWM capable pin)
 #define rx_rotate_ccw_dig 6         // optional - DIGITAL CCW output - set to 0 to disable (must be PWM capable pin)
