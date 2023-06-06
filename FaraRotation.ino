@@ -93,7 +93,6 @@ void setup() {
   read_rtc(READ_RTC_NOW);
   initialize_geometry();
   initialize_features();
-
   #ifdef DEBUG
     control_port->println(CODE_VERSION);
     control_port->print(F("My Long: "));
@@ -131,16 +130,18 @@ void loop() {
 /*-------- SUBROUTINES --------  INITIALIZATIONS  */
 
 void initialize_features () {
-// bit 0 <-> OUTPUT CONTROL   (0=DIGITAL, 1=PWM) 
-// bit 1 <-> SPEED CONTROL    (0=NO CONTROL, 1=SLOW START/STOP)
-// bit 2 <-> PTT AUTOMATION   (0=DISBLED, 1=ENABLED)
-// bit 3 <-> FUTURE EXPANSION (DEFAULT = 0)
-// bit 4 <-> TX LINKED TO RX (0=DISABLED, 1=ENABLED)
-// bit 5 <-> FUTURE EXPANSION (DEFAULT = 0)
-// bit 6 <-> FUTURE EXPANSION (DEFAULT = 0)
-// bit 7 <-> FUTURE EXPANSION (DEFAULT = 1)
+  // bit 0 <-> NEXTION 7 - OUTPUT CONTROL   (0=DIGITAL, 1=PWM) 
+  // bit 1 <-> NEXTION 6 - SPEED CONTROL    (0=NO CONTROL, 1=SLOW START/STOP)
+  // bit 2 <-> NEXTION 5 - PTT AUTOMATION   (0=DISBLED, 1=ENABLED)
+  // bit 3 <-> NEXTION 4 - FUTURE EXPANSION (DEFAULT = 0)
+  // bit 4 <-> NEXTION 3 - TX LINKED TO RX (0=DISABLED, 1=ENABLED)
+  // bit 5 <-> NEXTION 2 - FUTURE EXPANSION (DEFAULT = 0)
+  // bit 6 <-> NEXTION 1 - FUTURE EXPANSION (DEFAULT = 0)
+  // bit 7 <-> NEXTION 0 - FUTURE EXPANSION (DEFAULT = 1)
+  // NEXTION STRING: 10000111
+  //                 0<---->7
 
-active_features = B10000000;
+  active_features = B10000000;
 
   #if defined (PWM_OUTPUT)
     bitWrite(active_features, 0, 1);
@@ -151,7 +152,6 @@ active_features = B10000000;
   #if defined (PTT_AUTOMATION)
     bitWrite(active_features, 2, 1);
   #endif  
-  control_port->println(active_features, BIN); 
 } /* END initialize_features() */
 
 void initialize_geometry () {
@@ -671,7 +671,7 @@ void send_info_to_nextion() {
 } /* END send_info() */
 
 void send_status_to_nextion() {
-  if ((millis() - last_status_sending_time) > INFO_SENDING_RATE) {
+  if ((millis() - last_status_sending_time) > STATUS_SENDING_RATE) {
     char workstring[30];
     strcpy(workstring, "gStatus.txt=\"");
     for (int i = 7; i >= 0; i--) {
@@ -679,12 +679,11 @@ void send_status_to_nextion() {
     }
     strcat(workstring, "\"");
     send_nextion_message(workstring);
-    // #ifdef DEBUG
+    #ifdef DEBUG
       control_port->println(F("Sending Status Data to Nextion port"));
-            control_port->println(workstring);
-    // #endif
+      control_port->println(workstring);
+    #endif
     last_status_sending_time = millis();
-
   }
 } /* END send_status _to_nextion() */
 
