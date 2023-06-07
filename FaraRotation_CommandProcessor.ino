@@ -28,7 +28,12 @@ void check_nextion_port_for_commands() {
         RX_ROTATING = RX_ROTATING_CW;
         RX_ROTATION_STATUS = RX_NORMAL_CW;
         send_status_to_nextion(NOW);
-        rotate_antenna(ROTATE_RX_ANTENNA_CW, ROTATE_ONE);
+        if (Linked) {
+          rotate_antenna(ROTATE_RX_ANTENNA_CW, ROTATE_BOTH);
+        }
+        else {
+          rotate_antenna(ROTATE_RX_ANTENNA_CW, ROTATE_ONE);
+        }
         #ifdef DEBUG
           control_port->println(F("nextion_port ROTATE RX ANTENNA CW command received"));
         #endif
@@ -40,7 +45,12 @@ void check_nextion_port_for_commands() {
         RX_ROTATING = RX_ROTATING_CCW;
         RX_ROTATION_STATUS = RX_NORMAL_CCW;
         send_status_to_nextion(NOW);
-        rotate_antenna(ROTATE_RX_ANTENNA_CCW, ROTATE_ONE);
+        if (Linked) {
+          rotate_antenna(ROTATE_RX_ANTENNA_CCW, ROTATE_BOTH);
+        }
+        else {
+          rotate_antenna(ROTATE_RX_ANTENNA_CCW, ROTATE_ONE);
+        }
         #ifdef DEBUG
           control_port->println(F("nextion_port ROTATE RX ANTENNA CCW command received"));
         #endif
@@ -56,13 +66,23 @@ void check_nextion_port_for_commands() {
           RX_ROTATING = RX_ROTATING_CCW;
           RX_ROTATION_STATUS = RX_TO_TARGET_CCW;
           send_status_to_nextion(NOW);
-          rotate_antenna(ROTATE_RX_ANTENNA_CCW, ROTATE_ONE);
+          if (Linked){
+            rotate_antenna(ROTATE_TX_ANTENNA_CCW, ROTATE_BOTH);
+          }
+          else {
+            rotate_antenna(ROTATE_RX_ANTENNA_CCW, ROTATE_ONE);
+          }
         }
         else {
           RX_ROTATING = RX_ROTATING_CW;
           RX_ROTATION_STATUS = RX_TO_TARGET_CW;
           send_status_to_nextion(NOW);
-          rotate_antenna(ROTATE_RX_ANTENNA_CW, ROTATE_ONE);
+          if (Linked){
+            rotate_antenna(ROTATE_TX_ANTENNA_CW, ROTATE_BOTH);
+          }
+          else {
+            rotate_antenna(ROTATE_RX_ANTENNA_CW, ROTATE_ONE);
+          }
         }
         #ifdef DEBUG
           control_port->println(F("nextion_port ROTATE RX ANTENNA TO command received"));
@@ -72,11 +92,12 @@ void check_nextion_port_for_commands() {
       } // COMMAND ROTATE_RX_ANTENNA_TO
 
       if (nextion_received_command == ROTATE_TX_ANTENNA_CW_CMD) {
-        //command_received = true;
         COMMAND = ROTATE_TX_ANTENNA_CW;
         stop(TX_ANTENNA);
         TX_ROTATING = TX_ROTATING_CW;
         TX_ROTATION_STATUS = TX_NORMAL_CW;
+        Linked = false;
+        bitWrite(active_features, 4, 0);
         send_status_to_nextion(NOW);
         rotate_antenna(ROTATE_TX_ANTENNA_CW, ROTATE_ONE);
         #ifdef DEBUG
@@ -85,11 +106,12 @@ void check_nextion_port_for_commands() {
       }  // COMMAND ROTATE_TX_ANTENNA_CW
 
       if (nextion_received_command == ROTATE_TX_ANTENNA_CCW_CMD) {
-        //command_received = true;
         COMMAND = ROTATE_TX_ANTENNA_CCW;
         stop(TX_ANTENNA);
         TX_ROTATING = TX_ROTATING_CCW;
         TX_ROTATION_STATUS = TX_NORMAL_CCW;
+        Linked = false;
+        bitWrite(active_features, 4, 0);
         send_status_to_nextion(NOW);
         rotate_antenna(ROTATE_TX_ANTENNA_CCW, ROTATE_ONE);
         #ifdef DEBUG
@@ -100,6 +122,8 @@ void check_nextion_port_for_commands() {
       if (nextion_received_command.substring(0, 4) == ROTATE_TX_ANTENNA_TO_CMD) {
         COMMAND = ROTATE_TX_ANTENNA_TO;
         stop(TX_ANTENNA);
+        Linked = false;
+        bitWrite(active_features, 4, 0);
         TX_DegreesTo = atoi(nextion_received_command.substring(4).c_str());
         int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
         if (TX_DegreesTo < TX_Antenna_angle) {
@@ -147,6 +171,8 @@ void check_nextion_port_for_commands() {
       if (nextion_received_command == SYNC_TX_2_RX_ENABLE_CMD) {
         COMMAND = SYNC_TX_2_RX_ENABLE;
         stop(TX_ANTENNA);
+        Linked = false;
+        bitWrite(active_features, 4, 0);
         TX_DegreesTo = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
         int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
         if (TX_DegreesTo < TX_Antenna_angle) {
@@ -166,18 +192,19 @@ void check_nextion_port_for_commands() {
         #endif
       }  // COMMAND SYNC_TX_2_RX_ENABLE
 
-      if (nextion_received_command == SYNC_TX_2_RX_DISABLE_CMD) {
-        //command_received = true;
-        COMMAND = SYNC_TX_2_RX_DISABLE;
-        // SYNCRO LOGIC TO BE ADDED HERE  HERE;
-        #ifdef DEBUG
-          control_port->println(F("nextion_port SYNC_TX_2_RX_DISABLE command received"));
-        #endif
-      }  // COMMAND SYNC_TX_2_RX_DISABLE
+      // if (nextion_received_command == SYNC_TX_2_RX_DISABLE_CMD) {
+      //   //command_received = true;
+      //   COMMAND = SYNC_TX_2_RX_DISABLE;
+      //   // SYNCRO LOGIC TO BE ADDED HERE  HERE;
+      //   #ifdef DEBUG
+      //     control_port->println(F("nextion_port SYNC_TX_2_RX_DISABLE command received"));
+      //   #endif
+      // }  // COMMAND SYNC_TX_2_RX_DISABLE
 
       if (nextion_received_command == LINK_RX_AND_TX_ENABLE_CMD) {
         COMMAND = LINK_TX_AND_RX_ENABLE;
-        // rotate_both = true; ROTATE_BOTH
+        Linked = true;
+        bitWrite(active_features, 4, 1);
         #ifdef DEBUG
           control_port->println(F("nextion_port LINK_RX_AND_TX_ENABLE command received"));
         #endif
@@ -186,7 +213,8 @@ void check_nextion_port_for_commands() {
       if (nextion_received_command == LINK_RX_AND_TX_DISABLE_CMD) {
         //command_received = true;
         COMMAND = LINK_TX_AND_RX_DISABLE;
-        // rotate_both = false; ROTATE_ONE
+        Linked = false;
+        bitWrite(active_features, 4, 0);
         #ifdef DEBUG
           control_port->println(F("nextion_port LINK_RX_AND_TX_DISABLE command received"));
         #endif

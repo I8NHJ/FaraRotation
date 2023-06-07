@@ -34,6 +34,7 @@ unsigned long last_info_sending_time = 0;
 unsigned long last_rtc_reading_time = 0;
 unsigned long last_action_control_time = 0;
 unsigned long last_status_sending_time = 0;
+unsigned long last_ptt_checking_time = 0;
 
 RTC_DS3231 rtc;
 
@@ -84,6 +85,8 @@ int TXFaradayAngle;
 int RX_DegreesTo;
 int TX_DegreesTo;
 
+bool Linked = false;
+
 void setup() {
   initialize_serial();
   initialize_pins();
@@ -127,6 +130,9 @@ void loop() {
   check_if_action_is_needed();
   send_info_to_nextion(TIMED);
   send_status_to_nextion(TIMED);
+  #if defined (PTT_AUTOMATION)
+    check_ptt_status(TIMED);
+  #endif
 }
 
 /*-------- SUBROUTINES --------  INITIALIZATIONS  */
@@ -222,10 +228,11 @@ void initialize_pins() {
   pinMode(rx_rotate_ccw_enable, OUTPUT);
   pinMode(tx_rotate_cw_enable, OUTPUT);
   pinMode(tx_rotate_ccw_enable, OUTPUT);
-  
-  if (ptt_automation) {
-    pinMode(ptt_automation, INPUT_PULLUP);
-  }
+  #if defined(PTT_AUTOMATION)
+    if (ptt_automation) {
+      pinMode(ptt_automation, INPUT_PULLUP);
+    }
+  #endif
   
   #if defined(PWM_OUTPUT)
     pinMode(rx_rotate_cw_pwm, OUTPUT);
@@ -464,6 +471,16 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
     test_pins();
   #endif
 } /* END rotate_antenna() */
+
+void check_ptt_status(rrc read) {
+  if ( (millis() - last_ptt_checking_time) > PTT_CHECKING_RATE || (read == NOW)) {
+//Activate function and send status
+// Move TX to RX
+// Enable TX to RX LINK ?
+// If (PTT) move to Faraday else move to Old RX degrees 
+    last_ptt_checking_time=millis();
+  }
+} /* END check_ptt_status */
 
 #ifdef DEBUG
 void test_pins() {

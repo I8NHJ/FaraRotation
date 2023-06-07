@@ -24,10 +24,11 @@
 #define SLOW_START_STOP_PROXIMITY 3
 
 /* TIMING CONFIGURATION */
-#define POTS_READING_RATE 250         // Potentiometer reading loop timing (millisecs)
+#define POTS_READING_RATE 100 //250         // Potentiometer reading loop timing (millisecs) Nextion timer refresh is set to 100ms
 #define INFO_SENDING_RATE 1000        // Info broadcasting timing (millisecs)
 #define STATUS_SENDING_RATE 250       // Info broadcasting timing (millisecs)
 #define RTC_READING_RATE 1000         // RTC reading timing (millisecs)
+#define PTT_CHECKING_RATE 200         // RTC reading timing (millisecs)
 #define ACTION_LOOP_RATE 50           // Reaction loop timing (millisecs)
 #define CONTROL_PORT_READ_RATE 500    // NOT IN USE
 #define NEXTION_PORT_READ_RATE 250    // Command loop timing (millisecs)
