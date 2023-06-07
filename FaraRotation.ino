@@ -78,7 +78,6 @@ double TargetMoonEl;
 double TargetMoonDist;
 
 int MyPolarAngle;
-// double TargetPolarAngle;
 int SpatialOffset;
 int TXFaradayAngle;
 
@@ -90,9 +89,12 @@ void setup() {
   initialize_pins();
   initialize_eeprom();
   initialize_rtc();
-  read_rtc(READ_RTC_NOW);
+  read_rtc(NOW);
+  read_degrees(NOW);
   initialize_geometry();
   initialize_features();
+  send_info_to_nextion(NOW);
+  send_status_to_nextion(NOW);
   #ifdef DEBUG
     control_port->println(CODE_VERSION);
     control_port->print(F("My Long: "));
@@ -119,12 +121,12 @@ void setup() {
 }
 
 void loop() {
-  read_rtc(TIMED_RTC_READ);
-  read_degrees();
+  read_rtc(TIMED);
+  read_degrees(TIMED);
   check_nextion_port_for_commands();
   check_if_action_is_needed();
-  send_info_to_nextion();
-  send_status_to_nextion();
+  send_info_to_nextion(TIMED);
+  send_status_to_nextion(TIMED);
 }
 
 /*-------- SUBROUTINES --------  INITIALIZATIONS  */
@@ -132,16 +134,16 @@ void loop() {
 void initialize_features () {
   // bit 0 <-> NEXTION 7 - OUTPUT CONTROL   (0=DIGITAL, 1=PWM) 
   // bit 1 <-> NEXTION 6 - SPEED CONTROL    (0=NO CONTROL, 1=SLOW START/STOP)
-  // bit 2 <-> NEXTION 5 - PTT AUTOMATION   (0=DISBLED, 1=ENABLED)
-  // bit 3 <-> NEXTION 4 - FUTURE EXPANSION (DEFAULT = 0)
-  // bit 4 <-> NEXTION 3 - TX LINKED TO RX (0=DISABLED, 1=ENABLED)
+  // bit 2 <-> NEXTION 5 - PTT AUTOMATION   (0=DISABLED, 1=ENABLED)
+  // bit 3 <-> NEXTION 4 - ONE ANTENNA ONLY (0=DISABLED, 1=ENABLED)
+  // bit 4 <-> NEXTION 3 - TX LINKED TO RX  (0=DISABLED, 1=ENABLED)
   // bit 5 <-> NEXTION 2 - FUTURE EXPANSION (DEFAULT = 0)
   // bit 6 <-> NEXTION 1 - FUTURE EXPANSION (DEFAULT = 0)
   // bit 7 <-> NEXTION 0 - FUTURE EXPANSION (DEFAULT = 1)
   // NEXTION STRING: 10000111
   //                 0<---->7
 
-  active_features = B10000000;
+  active_features = B10000000; //DEFAULT
 
   #if defined (PWM_OUTPUT)
     bitWrite(active_features, 0, 1);
@@ -151,7 +153,10 @@ void initialize_features () {
   #endif
   #if defined (PTT_AUTOMATION)
     bitWrite(active_features, 2, 1);
-  #endif  
+  #endif
+  #if defined (ONE_ANTENNA)
+    bitWrite(active_features, 3, 1);
+  #endif    
 } /* END initialize_features() */
 
 void initialize_geometry () {
@@ -272,7 +277,7 @@ void initialize_rtc(){
 /*-------- SUBROUTINES --------  FUNCTIONS AND ACTIONS  */
 
 void read_rtc(rrc read) {
-  if ( (millis() - last_rtc_reading_time) > RTC_READING_RATE || (read == READ_RTC_NOW)) {
+  if ( (millis() - last_rtc_reading_time) > RTC_READING_RATE || (read == NOW)) {
     Now = rtc.now() + TimeSpan(0,UTCDIFF,0,0);
     Year = Now.year();
     Month = Now.month();
@@ -460,6 +465,7 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
   #endif
 } /* END rotate_antenna() */
 
+#ifdef DEBUG
 void test_pins() {
   control_port->print("RX_CW ");
   control_port->print(String(digitalRead(rx_rotate_cw_dig)));
@@ -470,14 +476,14 @@ void test_pins() {
   control_port->print("\tTX_CCW ");
   control_port->println(String(digitalRead(tx_rotate_ccw_dig)));
 } /* END test_pins() */
+#endif
 
-void read_degrees() {
-  if ((millis() - last_degrees_reading_time) > POTS_READING_RATE) {
+void read_degrees(rrc read) {
+  if ((millis() - last_degrees_reading_time) > POTS_READING_RATE  || (read == NOW)) {
     unsigned int RX_Antenna_angle = analogRead(rx_rotator_degs_pin);
     nextion_show_angle(convert_analog_to_degrees(RX_Antenna_angle, RX_ANTENNA), RX_ANTENNA);
     unsigned int TX_Antenna_angle = analogRead(tx_rotator_degs_pin);
     nextion_show_angle(convert_analog_to_degrees(TX_Antenna_angle, TX_ANTENNA), TX_ANTENNA);
-    update_nextion_rotation_status();
     last_degrees_reading_time = millis();
   }
 } /* END read_degrees() */
@@ -609,22 +615,10 @@ void nextion_show_angle(int degrees, unsigned int antenna) {
   }
 } /* END nextion_show_angle() */
 
-void update_nextion_rotation_status(){
-  char workstring[30];
-  strcpy(workstring, "tRXRotStatus.txt=\"");
-  strcat(workstring, ROTATION_STATUS_TEXT[RX_ROTATION_STATUS]);
-  strcat(workstring, "\"");
-  send_nextion_message(workstring);    
-  strcpy(workstring, "tTXRotStatus.txt=\"");
-  strcat(workstring, ROTATION_STATUS_TEXT[TX_ROTATION_STATUS]);
-  strcat(workstring, "\"");
-  send_nextion_message(workstring);        
-} /* END update_nextion_rotation_status() */
-
-void send_info_to_nextion() {
-  if ((millis() - last_info_sending_time) > INFO_SENDING_RATE) {
+void send_info_to_nextion(rrc read) {
+  if (((millis() - last_info_sending_time) > INFO_SENDING_RATE) || (read == NOW)) {
     char workstring[30];
-    read_rtc(READ_RTC_NOW);
+    read_rtc(NOW);
     calculate_geometry();
     strcpy(workstring, "tCLOCK.txt=\"");
     char nowString[]="YYYY MMM DD hh:mm:ss";
@@ -670,8 +664,8 @@ void send_info_to_nextion() {
   }
 } /* END send_info() */
 
-void send_status_to_nextion() {
-  if ((millis() - last_status_sending_time) > STATUS_SENDING_RATE) {
+void send_status_to_nextion(rrc read) {
+  if (((millis() - last_status_sending_time) > STATUS_SENDING_RATE) || (read == NOW)) {
     char workstring[30];
     strcpy(workstring, "gStatus.txt=\"");
     for (int i = 7; i >= 0; i--) {
@@ -683,6 +677,14 @@ void send_status_to_nextion() {
       control_port->println(F("Sending Status Data to Nextion port"));
       control_port->println(workstring);
     #endif
+    strcpy(workstring, "tRXRotStatus.txt=\"");
+    strcat(workstring, ROTATION_STATUS_TEXT[RX_ROTATION_STATUS]);
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);    
+    strcpy(workstring, "tTXRotStatus.txt=\"");
+    strcat(workstring, ROTATION_STATUS_TEXT[TX_ROTATION_STATUS]);
+    strcat(workstring, "\"");
+    send_nextion_message(workstring);   
     last_status_sending_time = millis();
   }
 } /* END send_status _to_nextion() */
