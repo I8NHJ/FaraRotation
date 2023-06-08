@@ -98,6 +98,8 @@ void check_nextion_port_for_commands() {
         TX_ROTATION_STATUS = TX_NORMAL_CW;
         Linked = false;
         bitWrite(active_features, 4, 0);
+        Ptt = false;
+        bitWrite(active_features, 5, 0);
         send_status_to_nextion(NOW);
         rotate_antenna(ROTATE_TX_ANTENNA_CW, ROTATE_ONE);
         #ifdef DEBUG
@@ -112,6 +114,8 @@ void check_nextion_port_for_commands() {
         TX_ROTATION_STATUS = TX_NORMAL_CCW;
         Linked = false;
         bitWrite(active_features, 4, 0);
+        Ptt = false;
+        bitWrite(active_features, 5, 0);
         send_status_to_nextion(NOW);
         rotate_antenna(ROTATE_TX_ANTENNA_CCW, ROTATE_ONE);
         #ifdef DEBUG
@@ -124,6 +128,8 @@ void check_nextion_port_for_commands() {
         stop(TX_ANTENNA);
         Linked = false;
         bitWrite(active_features, 4, 0);
+        Ptt = false;
+        bitWrite(active_features, 5, 0);
         TX_DegreesTo = atoi(nextion_received_command.substring(4).c_str());
         int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
         if (TX_DegreesTo < TX_Antenna_angle) {
@@ -173,6 +179,8 @@ void check_nextion_port_for_commands() {
         stop(TX_ANTENNA);
         Linked = false;
         bitWrite(active_features, 4, 0);
+        Ptt = false;
+        bitWrite(active_features, 5, 0);
         TX_DegreesTo = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
         int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
         if (TX_DegreesTo < TX_Antenna_angle) {
@@ -205,6 +213,8 @@ void check_nextion_port_for_commands() {
         COMMAND = LINK_TX_AND_RX_ENABLE;
         Linked = true;
         bitWrite(active_features, 4, 1);
+        Ptt = false;
+        bitWrite(active_features, 5, 0);
         #ifdef DEBUG
           control_port->println(F("nextion_port LINK_RX_AND_TX_ENABLE command received"));
         #endif
@@ -215,6 +225,8 @@ void check_nextion_port_for_commands() {
         COMMAND = LINK_TX_AND_RX_DISABLE;
         Linked = false;
         bitWrite(active_features, 4, 0);
+        Ptt = false;
+        bitWrite(active_features, 5, 0);
         #ifdef DEBUG
           control_port->println(F("nextion_port LINK_RX_AND_TX_DISABLE command received"));
         #endif
@@ -222,7 +234,26 @@ void check_nextion_port_for_commands() {
 
       if (nextion_received_command == PTT_AUTOMATION_ENABLED_CMD) {
         COMMAND = PTT_AUTOMATION_ENABLED;
-        // PTT LOGIC TO BE ADDED HERE;
+        Linked = false;
+        bitWrite(active_features, 4, 0);
+        Ptt = true;
+        bitWrite(active_features, 5, 1);
+        // MOVE TX ANTENNA TO RX;
+        TX_DegreesTo = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
+        int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
+        if (TX_DegreesTo < TX_Antenna_angle) {
+          TX_ROTATING = TX_ROTATING_CCW;
+          TX_ROTATION_STATUS = TX_SYNC_TO_RX_CCW;
+          send_status_to_nextion(NOW);
+          rotate_antenna(ROTATE_TX_ANTENNA_CCW, ROTATE_ONE);
+        }
+        else {
+          TX_ROTATING = TX_ROTATING_CW;
+          TX_ROTATION_STATUS =  TX_SYNC_TO_RX_CW;
+          send_status_to_nextion(NOW);
+          rotate_antenna(ROTATE_TX_ANTENNA_CW, ROTATE_ONE);
+        }
+
         #ifdef DEBUG
           control_port->println(F("nextion_port PTT_AUTOMATION_ENABLED command received"));
         #endif
@@ -230,7 +261,10 @@ void check_nextion_port_for_commands() {
 
       if (nextion_received_command == PTT_AUTOMATION_DISABLED_CMD) {
         COMMAND = PTT_AUTOMATION_DISABLED;
-        // PTT LOGIC TO BE ADDED HERE;
+        Linked = false;
+        bitWrite(active_features, 4, 0);
+        Ptt = false;
+        bitWrite(active_features, 5, 0);
         #ifdef DEBUG
           control_port->println(F("nextion_port PTT_AUTOMATION_DISABLED command received"));
         #endif
@@ -278,36 +312,8 @@ void check_nextion_port_for_commands() {
 
       if (nextion_received_command == SEND_CONFIG_CMD) {
         COMMAND = SEND_CONFIG;
-        // command_received = true;
-        EEPROM.get(1, configuration_data);
-        char workstring[30];
-        strcpy(workstring, "callsign.txt=\"");
-        strcat(workstring, configuration_data.Callsign);
-        strcat(workstring, "\"");
-        send_nextion_message(workstring);
-        strcpy(workstring, "gMyGrid.txt=\"");
-        strcat(workstring, configuration_data.Grid);
-        strcat(workstring, "\"");
-        send_nextion_message(workstring);
-        strcpy(workstring, "RX_ANT_CW_ANA.txt=\"");
-        strcat(workstring, String(configuration_data.Analog_CW[0]).c_str());
-        strcat(workstring, "\"");
-        send_nextion_message(workstring);
-        strcpy(workstring, "RX_ANT_CCW_ANA.txt=\"");
-        strcat(workstring, String(configuration_data.Analog_CCW[0]).c_str());
-        strcat(workstring, "\"");
-        send_nextion_message(workstring);
-        strcpy(workstring, "TX_ANT_CW_ANA.txt=\"");
-        strcat(workstring, String(configuration_data.Analog_CW[1]).c_str());
-        strcat(workstring, "\"");
-        send_nextion_message(workstring);
-        strcpy(workstring, "TX_ANT_CCW_ANA.txt=\"");
-        strcat(workstring, String(configuration_data.Analog_CCW[1]).c_str());
-        strcat(workstring, "\"");
-        send_nextion_message(workstring);
-        #ifdef DEBUG
-          control_port->println(F("nextion_port SEND_CONFIG command received"));
-        #endif
+        send_config_to_nextion();
+        read_degrees(NOW);
       }  // COMMAND SEND_CONFIG
 
       if (nextion_received_command.substring(0, 3) == SAVE_CALLSIGN_TO_EEPROM_CMD) {

@@ -14,7 +14,7 @@
 #define PWM_OUTPUT
 #define SLOW_START_STOP
 #define PTT_AUTOMATION
-#define ONE_ANTENNA
+// #define ONE_ANTENNA
 
 /* OPTIONS CONFIGURATION */
 #define PWM_SPEED 255

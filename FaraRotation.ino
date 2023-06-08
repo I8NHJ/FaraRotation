@@ -86,6 +86,7 @@ int RX_DegreesTo;
 int TX_DegreesTo;
 
 bool Linked = false;
+bool Ptt = false;
 
 void setup() {
   initialize_serial();
@@ -131,7 +132,7 @@ void loop() {
   send_info_to_nextion(TIMED);
   send_status_to_nextion(TIMED);
   #if defined (PTT_AUTOMATION)
-    check_ptt_status(TIMED);
+    if (Ptt) {check_ptt_status(TIMED);}
   #endif
 }
 
@@ -142,8 +143,8 @@ void initialize_features () {
   // bit 1 <-> NEXTION 6 - SPEED CONTROL    (0=NO CONTROL, 1=SLOW START/STOP)
   // bit 2 <-> NEXTION 5 - PTT AUTOMATION   (0=DISABLED, 1=ENABLED)
   // bit 3 <-> NEXTION 4 - ONE ANTENNA ONLY (0=DISABLED, 1=ENABLED)
-  // bit 4 <-> NEXTION 3 - TX LINKED TO RX  (0=DISABLED, 1=ENABLED)
-  // bit 5 <-> NEXTION 2 - FUTURE EXPANSION (DEFAULT = 0)
+  // bit 4 <-> NEXTION 3 - TX LINKED TO RX  (0=INACTIVE, 1=ACTIVE)
+  // bit 5 <-> NEXTION 2 - PTT CONTROL      (0=INACTIVE, 1=ACTIVE)
   // bit 6 <-> NEXTION 1 - FUTURE EXPANSION (DEFAULT = 0)
   // bit 7 <-> NEXTION 0 - FUTURE EXPANSION (DEFAULT = 1)
   // NEXTION STRING: 10000111
@@ -295,7 +296,7 @@ void read_rtc(rrc read) {
 } /* END read_rtc() */
 
 void stop(int antenna) {
-  if ((antenna == ALL_ANTENNAS) && ((RX_ROTATION_STATUS != RX_IDLE) || (TX_ROTATION_STATUS != TX_IDLE))) {
+  if ((antenna == ALL_ANTENNAS) || (Linked) && ((RX_ROTATION_STATUS != RX_IDLE) || (TX_ROTATION_STATUS != TX_IDLE))) {
     #if defined (PWM_OUTPUT)
       #if defined (SLOW_START_STOP)
         for (int speed = PWM_SPEED/2; speed > SLOW_START_STOP_MIN; speed -= SLOW_START_STOP_STEPS) {
@@ -472,15 +473,25 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
   #endif
 } /* END rotate_antenna() */
 
+#if defined(PTT_AUTOMATION)
 void check_ptt_status(rrc read) {
-  if ( (millis() - last_ptt_checking_time) > PTT_CHECKING_RATE || (read == NOW)) {
-//Activate function and send status
-// Move TX to RX
-// Enable TX to RX LINK ?
-// If (PTT) move to Faraday else move to Old RX degrees 
+  if ((millis() - last_ptt_checking_time) > PTT_CHECKING_RATE || (read == NOW)) {
+  // Enable TX to RX LINK ?
+  // If (PTT) move to Faraday else move to Old RX degrees 
+  if (digitalRead(ptt_automation)){
+    control_port->println("TX OFF RITORNA SU RX");
+    // Ritorna a RXToReturn
+  }
+  else
+  {
+    control_port->println("TX ON MUOVI TO FARADAY");
+    // Leggi la posizione di RX RXToReturn 
+  }
+
     last_ptt_checking_time=millis();
   }
-} /* END check_ptt_status */
+} /* END check_ptt_status() */
+#endif
 
 #ifdef DEBUG
 void test_pins() {
@@ -606,7 +617,39 @@ void send_nextion_message(char message[30]) {
   #ifdef DEBUG
     control_port->println(message);
   #endif
-} /* END send_nextion_message*/
+} /* END send_nextion_message() */
+
+void send_config_to_nextion() {
+        EEPROM.get(1, configuration_data);
+        char workstring[30];
+        strcpy(workstring, "callsign.txt=\"");
+        strcat(workstring, configuration_data.Callsign);
+        strcat(workstring, "\"");
+        send_nextion_message(workstring);
+        strcpy(workstring, "gMyGrid.txt=\"");
+        strcat(workstring, configuration_data.Grid);
+        strcat(workstring, "\"");
+        send_nextion_message(workstring);
+        strcpy(workstring, "RX_ANT_CW_ANA.txt=\"");
+        strcat(workstring, String(configuration_data.Analog_CW[0]).c_str());
+        strcat(workstring, "\"");
+        send_nextion_message(workstring);
+        strcpy(workstring, "RX_ANT_CCW_ANA.txt=\"");
+        strcat(workstring, String(configuration_data.Analog_CCW[0]).c_str());
+        strcat(workstring, "\"");
+        send_nextion_message(workstring);
+        strcpy(workstring, "TX_ANT_CW_ANA.txt=\"");
+        strcat(workstring, String(configuration_data.Analog_CW[1]).c_str());
+        strcat(workstring, "\"");
+        send_nextion_message(workstring);
+        strcpy(workstring, "TX_ANT_CCW_ANA.txt=\"");
+        strcat(workstring, String(configuration_data.Analog_CCW[1]).c_str());
+        strcat(workstring, "\"");
+        send_nextion_message(workstring);
+        #ifdef DEBUG
+          control_port->println(F("nextion_port SEND_CONFIG command received"));
+        #endif
+} /* END send_config_to_nextion() */
 
 void nextion_show_angle(int degrees, unsigned int antenna) {
   char workstring[30];
