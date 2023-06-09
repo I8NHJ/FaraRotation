@@ -84,6 +84,7 @@ int TXFaradayAngle;
 
 int RX_DegreesTo;
 int TX_DegreesTo;
+int RX_DegreesPttInit;
 
 bool Linked = false;
 bool Ptt = false;
@@ -476,19 +477,47 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
 #if defined(PTT_AUTOMATION)
 void check_ptt_status(rrc read) {
   if ((millis() - last_ptt_checking_time) > PTT_CHECKING_RATE || (read == NOW)) {
-  // Enable TX to RX LINK ?
-  // If (PTT) move to Faraday else move to Old RX degrees 
-  if (digitalRead(ptt_automation)){
-    control_port->println("TX OFF RITORNA SU RX");
-    // Ritorna a RXToReturn
-  }
-  else
-  {
-    control_port->println("TX ON MUOVI TO FARADAY");
-    // Leggi la posizione di RX RXToReturn 
-  }
+    // Enable TX to RX LINK ?
+    // If (PTT) move to Faraday else move to Old RX degrees
 
-    last_ptt_checking_time=millis();
+    if (digitalRead(ptt_automation)) {
+      // Check if RX degrees have changed since starting automation, if yes move and init 
+      int RX_DegreesPtt = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
+      //      if (abs(RX_DegreesPtt - RX_DegreesPttInit) > SLOW_START_STOP_PROXIMITY) {
+      //        if (RX_DegreesPtt < RX_DegreesPttInit) {
+      //          rotate_antenna(ROTATE_RX_ANTENNA_CCW, ROTATE_ONE);
+      //        }
+      //        else {
+      //          rotate_antenna(ROTATE_RX_ANTENNA_CW, ROTATE_ONE);
+      //        }
+      //        RX_DegreesPttInit = RX_DegreesPtt;
+      //        }
+      int TX_DegreesPtt = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
+
+      if (abs(RX_DegreesPtt - TX_DegreesPtt) > SLOW_START_STOP_PROXIMITY) {
+        control_port->println("Muoviti");
+        if (RX_DegreesPtt < TX_DegreesPtt) {
+          TX_ROTATING = TX_ROTATING_CCW;
+          TX_ROTATION_STATUS = TX_SYNC_TO_RX_CCW;
+          send_status_to_nextion(NOW);
+          rotate_antenna(ROTATE_TX_ANTENNA_CCW, ROTATE_ONE);
+        }
+        else {
+          TX_ROTATING = TX_ROTATING_CW;
+          TX_ROTATION_STATUS =  TX_SYNC_TO_RX_CW;
+          send_status_to_nextion(NOW);
+          rotate_antenna(ROTATE_TX_ANTENNA_CW, ROTATE_ONE);
+        }
+      control_port->println("TX OFF RITORNA SU RX");
+      // Ritorna a RXToReturn
+      }
+    }
+    else
+    {
+      control_port->println("TX ON MUOVI TO FARADAY");
+      // Leggi la posizione di RX RXToReturn 
+    }
+  last_ptt_checking_time=millis();
   }
 } /* END check_ptt_status() */
 #endif

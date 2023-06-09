@@ -238,8 +238,9 @@ void check_nextion_port_for_commands() {
         bitWrite(active_features, 4, 0);
         Ptt = true;
         bitWrite(active_features, 5, 1);
-        // MOVE TX ANTENNA TO RX;
-        TX_DegreesTo = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
+        // Read RX ANTENNA INIT STATUS AND MOVE TX ANTENNA TO RX;
+        RX_DegreesPttInit = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
+        TX_DegreesTo = RX_DegreesPttInit;
         int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
         if (TX_DegreesTo < TX_Antenna_angle) {
           TX_ROTATING = TX_ROTATING_CCW;
