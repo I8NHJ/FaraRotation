@@ -1,3 +1,5 @@
+/*-------- MAIN COMMAND PROCESSING CODE  -------- */
+
 void check_nextion_port_for_commands() {
   if (nextion_port->available()) {
     #ifdef DEBUG
@@ -62,7 +64,7 @@ void check_nextion_port_for_commands() {
         stop(RX_ANTENNA);
         RX_DegreesTo = atoi(nextion_received_command.substring(4).c_str());
         int RX_Antenna_angle = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
-        if (RX_DegreesTo < RX_Antenna_angle) {
+        if (rotation_way(RX_Antenna_angle, RX_DegreesTo) == CCW) {
           RX_ROTATING = RX_ROTATING_CCW;
           RX_ROTATION_STATUS = RX_TO_TARGET_CCW;
           send_status_to_nextion(NOW);
@@ -132,7 +134,8 @@ void check_nextion_port_for_commands() {
         bitWrite(active_features, 5, 0);
         TX_DegreesTo = atoi(nextion_received_command.substring(4).c_str());
         int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
-        if (TX_DegreesTo < TX_Antenna_angle) {
+        if (rotation_way(TX_Antenna_angle, TX_DegreesTo) == CCW) {
+//        if (TX_DegreesTo < TX_Antenna_angle) {
           TX_ROTATING = TX_ROTATING_CCW;
           TX_ROTATION_STATUS = TX_TO_TARGET_CCW;
           send_status_to_nextion(NOW);
@@ -183,7 +186,8 @@ void check_nextion_port_for_commands() {
         bitWrite(active_features, 5, 0);
         TX_DegreesTo = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
         int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
-        if (TX_DegreesTo < TX_Antenna_angle) {
+        if (rotation_way(TX_Antenna_angle, TX_DegreesTo) == CCW) {
+//        if (TX_DegreesTo < TX_Antenna_angle) {
           TX_ROTATING = TX_ROTATING_CCW;
           TX_ROTATION_STATUS = TX_SYNC_TO_RX_CCW;
           send_status_to_nextion(NOW);
@@ -242,15 +246,16 @@ void check_nextion_port_for_commands() {
         RX_DegreesPttInit = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
         TX_DegreesTo = RX_DegreesPttInit;
         int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
-        if (TX_DegreesTo < TX_Antenna_angle) {
+        if (rotation_way(TX_Antenna_angle, TX_DegreesTo) == CCW) {
+//        if (TX_DegreesTo < TX_Antenna_angle) {
           TX_ROTATING = TX_ROTATING_CCW;
-          TX_ROTATION_STATUS = TX_SYNC_TO_RX_CCW;
+          TX_ROTATION_STATUS = TX_SYNC_TO_RX_PTT_CCW;
           send_status_to_nextion(NOW);
           rotate_antenna(ROTATE_TX_ANTENNA_CCW, ROTATE_ONE);
         }
         else {
           TX_ROTATING = TX_ROTATING_CW;
-          TX_ROTATION_STATUS =  TX_SYNC_TO_RX_CW;
+          TX_ROTATION_STATUS =  TX_SYNC_TO_RX_PTT_CW;
           send_status_to_nextion(NOW);
           rotate_antenna(ROTATE_TX_ANTENNA_CW, ROTATE_ONE);
         }
@@ -345,7 +350,7 @@ void check_nextion_port_for_commands() {
         #endif
       }  // COMMAND SAVE_GRID_TO_EEPROM
 
-      if (COMMAND==NO_COMMAND) {
+      if (COMMAND == NO_COMMAND) {
         nextion_port->flush();
         #ifdef DEBUG
           control_port->println(F("nextion_port GARBAGE received"));

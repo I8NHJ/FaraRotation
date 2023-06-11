@@ -35,7 +35,7 @@ enum rlnk: bool {
   ROTATE_BOTH
 } ROTATE_WHAT;
 
-// ROTATION DIRECTION
+// ROTATIONS STATUS 
 enum rx_rdir: int {
   RX_NO_ROTATING,
   RX_ROTATING_CW,
@@ -47,6 +47,11 @@ enum tx_rdir: int {
   TX_ROTATING_CW,
   TX_ROTATING_CCW
 } TX_ROTATING;
+
+enum rdir: bool {
+  CW,
+  CCW
+} ROTATION_WAY;
 
 // TIMING CONTROL FOR SOME FUNCTIONS
 enum rrc: byte {
@@ -67,6 +72,8 @@ enum rxrs: byte {
   RX_SYNC_TO_TX_CCW,
   RX_SLOW_DOWN_CW,
   RX_SLOW_DOWN_CCW,
+  RX_SYNC_TO_TX_PTT_CW,
+  RX_SYNC_TO_TX_PTT_CCW,
   RX_INITIALIZE_SLOW_START_CW,
   RX_INITIALIZE_SLOW_START_CCW,
   RX_INITIALIZE_TIMED_SLOW_DOWN_CW,
@@ -92,6 +99,8 @@ enum txrs: byte {
   TX_SYNC_TO_RX_CCW,
   TX_SLOW_DOWN_CW,
   TX_SLOW_DOWN_CCW,
+  TX_SYNC_TO_RX_PTT_CW,
+  TX_SYNC_TO_RX_PTT_CCW,
   TX_INITIALIZE_SLOW_START_CW,
   TX_INITIALIZE_SLOW_START_CCW,
   TX_INITIALIZE_TIMED_SLOW_DOWN_CW,
@@ -117,19 +126,8 @@ char ROTATION_STATUS_TEXT[][15] = {
   "SYNCING TX CCW",
   "SLOWSTOP CW",
   "SLOWSTOP CCW",
+  "FOLLOWING CW",
+  "FOLLOWING CCW"
 };
 
-byte running_status = {B00000000};
-// PTT ACTIVE
-// RX LINKED TO TX
-// 1 or 2 ANTENNAS
-// TX 2 RX (ACTIVATED/STOPPED)
 
-//theDisplay[3] |= (1 << bitnumber); // for setting the bit
-//theDisplay[3] &= ~(1 << bitnumber); // for clearing the bit
-//theDisplay[3] ^= (1 << bitnumber); // togling
-// bitSet(x, n)
-//
-// Parameters
-// x: the numeric variable whose bit to set.
-// n: which bit to set, starting at 0 for the least-significant (rightmost) bit.
