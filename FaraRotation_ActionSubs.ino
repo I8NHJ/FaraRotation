@@ -246,6 +246,34 @@ void check_ptt_status(rrc read) {
   last_ptt_checking_time=millis();
   }
 } /* END check_ptt_status() */
+
+void ptt_move_to (int ptt_angle_to){
+        COMMAND = ROTATE_RX_ANTENNA_TO;
+        stop(RX_ANTENNA);
+        stop(TX_ANTENNA);
+        int RX_Antenna_angle = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
+        // int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
+        if (rotation_way(RX_Antenna_angle, ptt_angle_to) == CCW) {
+          RX_ROTATING = RX_ROTATING_CCW;
+          RX_ROTATION_STATUS = RX_TO_TARGET_CCW;
+          TX_ROTATING = TX_ROTATING_CCW;
+          TX_ROTATION_STATUS = TX_TO_TARGET_CCW;
+          send_status_to_nextion(NOW);
+          rotate_antenna(ROTATE_RX_ANTENNA_CCW, ROTATE_BOTH);
+        }
+        else {
+          RX_ROTATING = RX_ROTATING_CW;
+          RX_ROTATION_STATUS = RX_TO_TARGET_CW;
+          TX_ROTATING = TX_ROTATING_CW;
+          TX_ROTATION_STATUS = TX_TO_TARGET_CW;
+          send_status_to_nextion(NOW);
+          rotate_antenna(ROTATE_TX_ANTENNA_CW, ROTATE_BOTH);
+        }
+        #ifdef DEBUG
+          control_port->print(F("ROTATING RX AND TX ANTENNAS BECAUSE OF PTT "));
+          control_port->println(RX_DegreesTo);
+        #endif  
+} /* END ptt_move_to() */
 #endif /*PTT_AUTOMATION */
 
 void read_degrees(rrc read) {

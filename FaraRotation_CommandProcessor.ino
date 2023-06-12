@@ -59,7 +59,6 @@ void check_nextion_port_for_commands() {
       }  // COMMAND ROTATE_RX_ANTENNA_CCW
 
       if (nextion_received_command.substring(0, 4) == ROTATE_RX_ANTENNA_TO_CMD) {
-        //command_received = true;
         COMMAND = ROTATE_RX_ANTENNA_TO;
         stop(RX_ANTENNA);
         RX_DegreesTo = atoi(nextion_received_command.substring(4).c_str());
@@ -135,7 +134,7 @@ void check_nextion_port_for_commands() {
         TX_DegreesTo = atoi(nextion_received_command.substring(4).c_str());
         int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
         if (rotation_way(TX_Antenna_angle, TX_DegreesTo) == CCW) {
-//        if (TX_DegreesTo < TX_Antenna_angle) {
+          // if (TX_DegreesTo < TX_Antenna_angle) {
           TX_ROTATING = TX_ROTATING_CCW;
           TX_ROTATION_STATUS = TX_TO_TARGET_CCW;
           send_status_to_nextion(NOW);
@@ -187,7 +186,7 @@ void check_nextion_port_for_commands() {
         TX_DegreesTo = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
         int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
         if (rotation_way(TX_Antenna_angle, TX_DegreesTo) == CCW) {
-//        if (TX_DegreesTo < TX_Antenna_angle) {
+          //        if (TX_DegreesTo < TX_Antenna_angle) {
           TX_ROTATING = TX_ROTATING_CCW;
           TX_ROTATION_STATUS = TX_SYNC_TO_RX_CCW;
           send_status_to_nextion(NOW);
@@ -247,7 +246,7 @@ void check_nextion_port_for_commands() {
         TX_DegreesTo = RX_DegreesPttInit;
         int TX_Antenna_angle = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
         if (rotation_way(TX_Antenna_angle, TX_DegreesTo) == CCW) {
-//        if (TX_DegreesTo < TX_Antenna_angle) {
+          //        if (TX_DegreesTo < TX_Antenna_angle) {
           TX_ROTATING = TX_ROTATING_CCW;
           TX_ROTATION_STATUS = TX_SYNC_TO_RX_PTT_CCW;
           send_status_to_nextion(NOW);

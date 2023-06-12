@@ -1,5 +1,5 @@
-#define CODE_VERSION __DATE__ " " __TIME__ " N5NHJ"
-
+//#define CODE_VERSION "V1." __DATE__ " " __TIME__ " N5NHJ"
+#define CODE_VERSION "V1." __DATE__ " N5NHJ"
 //#define DEBUG
 
 #define CONTROL_PORT_SERIAL_PORT_CLASS HardwareSerial
@@ -26,7 +26,6 @@ NEXTION_PORT_SERIAL_PORT_CLASS *nextion_port;
 char nextion_port_buffer[COMMAND_BUFFER_SIZE];
 
 uint8_t active_features;
-// uint8_t running_status = {B00000000};
 
 unsigned long last_control_port_receive_time = 0;
 unsigned long last_nextion_port_receive_time = 0;
