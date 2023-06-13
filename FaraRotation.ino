@@ -1,6 +1,5 @@
-//#define CODE_VERSION "V1." __DATE__ " " __TIME__ " N5NHJ"
-#define CODE_VERSION "V1." __DATE__ " N5NHJ"
-//#define DEBUG
+#define CODE_VERSION "V1-" __DATE__ " N5NHJ"
+// #define DEBUG
 
 #define CONTROL_PORT_SERIAL_PORT_CLASS HardwareSerial
 #define NEXTION_PORT_SERIAL_PORT_CLASS HardwareSerial
@@ -14,8 +13,6 @@
 #include "FaraRotation_Enums.h"
 
 #include "moon2.h"
-
-// #include "FaraRotation_SpatialOffset.h"
 
 /*-------- VARIABLES --------*/
 CONTROL_PORT_SERIAL_PORT_CLASS *control_port;

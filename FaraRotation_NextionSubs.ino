@@ -11,39 +11,39 @@ void send_nextion_message(char message[30]) {
 } /* END send_nextion_message() */
 
 void send_config_to_nextion() {
-        EEPROM.get(1, configuration_data);
-        char workstring[30];
-        strcpy(workstring, "codeversion.txt=\"");
-        strcat(workstring, CODE_VERSION);
-        strcat(workstring, "\"");
-        send_nextion_message(workstring);
-        strcpy(workstring, "callsign.txt=\"");
-        strcat(workstring, configuration_data.Callsign);
-        strcat(workstring, "\"");
-        send_nextion_message(workstring);
-        strcpy(workstring, "gMyGrid.txt=\"");
-        strcat(workstring, configuration_data.Grid);
-        strcat(workstring, "\"");
-        send_nextion_message(workstring);
-        strcpy(workstring, "RX_ANT_CW_ANA.txt=\"");
-        strcat(workstring, String(configuration_data.Analog_CW[0]).c_str());
-        strcat(workstring, "\"");
-        send_nextion_message(workstring);
-        strcpy(workstring, "RX_ANT_CCW_ANA.txt=\"");
-        strcat(workstring, String(configuration_data.Analog_CCW[0]).c_str());
-        strcat(workstring, "\"");
-        send_nextion_message(workstring);
-        strcpy(workstring, "TX_ANT_CW_ANA.txt=\"");
-        strcat(workstring, String(configuration_data.Analog_CW[1]).c_str());
-        strcat(workstring, "\"");
-        send_nextion_message(workstring);
-        strcpy(workstring, "TX_ANT_CCW_ANA.txt=\"");
-        strcat(workstring, String(configuration_data.Analog_CCW[1]).c_str());
-        strcat(workstring, "\"");
-        send_nextion_message(workstring);
-        #ifdef DEBUG
-          control_port->println(F("nextion_port SEND_CONFIG command received"));
-        #endif
+  EEPROM.get(1, configuration_data);
+  char workstring[30];
+  strcpy(workstring, "cv.txt=\"");
+  strcat(workstring, CODE_VERSION);
+  strcat(workstring, "\"");
+  send_nextion_message(workstring);
+  strcpy(workstring, "callsign.txt=\"");
+  strcat(workstring, configuration_data.Callsign);
+  strcat(workstring, "\"");
+  send_nextion_message(workstring);
+  strcpy(workstring, "gMyGrid.txt=\"");
+  strcat(workstring, configuration_data.Grid);
+  strcat(workstring, "\"");
+  send_nextion_message(workstring);
+  strcpy(workstring, "RX_ANT_CW_ANA.txt=\"");
+  strcat(workstring, String(configuration_data.Analog_CW[0]).c_str());
+  strcat(workstring, "\"");
+  send_nextion_message(workstring);
+  strcpy(workstring, "RX_ANT_CCW_ANA.txt=\"");
+  strcat(workstring, String(configuration_data.Analog_CCW[0]).c_str());
+  strcat(workstring, "\"");
+  send_nextion_message(workstring);
+  strcpy(workstring, "TX_ANT_CW_ANA.txt=\"");
+  strcat(workstring, String(configuration_data.Analog_CW[1]).c_str());
+  strcat(workstring, "\"");
+  send_nextion_message(workstring);
+  strcpy(workstring, "TX_ANT_CCW_ANA.txt=\"");
+  strcat(workstring, String(configuration_data.Analog_CCW[1]).c_str());
+  strcat(workstring, "\"");
+  send_nextion_message(workstring);
+  #ifdef DEBUG
+    control_port->println(F("nextion_port SEND_CONFIG command received"));
+  #endif
 } /* END send_config_to_nextion() */
 
 void nextion_show_angle(int degrees, unsigned int antenna) {
@@ -112,9 +112,9 @@ void send_info_to_nextion(rrc read) {
     strcat(workstring, String(TXFaradayAngle).c_str());
     strcat(workstring, "\"");
     send_nextion_message(workstring);
-    #ifdef DEBUG
+   #ifdef DEBUG
       control_port->println(F("Sending Info Data to Nextion port"));
-    #endif
+   #endif
     last_info_sending_time = millis();
   }
 } /* END send_info() */
