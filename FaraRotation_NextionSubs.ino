@@ -12,7 +12,7 @@ void send_nextion_message(char message[30]) {
 
 void send_config_to_nextion() {
   EEPROM.get(1, configuration_data);
-  char workstring[30];
+  char workstring[31];
   strcpy(workstring, "cv.txt=\"");
   strcat(workstring, CODE_VERSION);
   strcat(workstring, "\"");
@@ -47,7 +47,7 @@ void send_config_to_nextion() {
 } /* END send_config_to_nextion() */
 
 void nextion_show_angle(int degrees, unsigned int antenna) {
-  char workstring[30];
+  char workstring[31];
   switch (antenna) {
     case RX_ANTENNA:
       strcpy(workstring, "vRXAngle.val=");
@@ -72,10 +72,10 @@ void nextion_show_angle(int degrees, unsigned int antenna) {
 
 void send_info_to_nextion(rrc read) {
   if (((millis() - last_info_sending_time) > INFO_SENDING_RATE) || (read == NOW)) {
-    char workstring[30];
+    char workstring[31];
     read_rtc(NOW);
     calculate_geometry();
-    strcpy(workstring, "tCLOCK.txt=\"");
+    strcpy(workstring, "tCK.txt=\"");
     char nowString[]="YYYY MMM DD hh:mm:ss";
     strcat(workstring, Now.toString(nowString));
     strcat(workstring, "\"");
@@ -121,7 +121,7 @@ void send_info_to_nextion(rrc read) {
 
 void send_status_to_nextion(rrc read) {
   if (((millis() - last_status_sending_time) > STATUS_SENDING_RATE) || (read == NOW)) {
-    char workstring[30];
+    char workstring[31];
     strcpy(workstring, "gStatus.txt=\"");
     for (int i = 7; i >= 0; i--) {
       strcat(workstring, String(bitRead(active_features, i)).c_str());
@@ -132,11 +132,11 @@ void send_status_to_nextion(rrc read) {
       control_port->println(F("Sending Status Data to Nextion port"));
       control_port->println(workstring);
     #endif
-    strcpy(workstring, "tRXRotStatus.txt=\"");
+    strcpy(workstring, "tRXStat.txt=\"");
     strcat(workstring, ROTATION_STATUS_TEXT[RX_ROTATION_STATUS]);
     strcat(workstring, "\"");
     send_nextion_message(workstring);    
-    strcpy(workstring, "tTXRotStatus.txt=\"");
+    strcpy(workstring, "tTXStat.txt=\"");
     strcat(workstring, ROTATION_STATUS_TEXT[TX_ROTATION_STATUS]);
     strcat(workstring, "\"");
     send_nextion_message(workstring);

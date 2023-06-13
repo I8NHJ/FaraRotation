@@ -191,7 +191,6 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
 
 #ifdef PTT_AUTOMATION
 void check_ptt_status(rrc read) {
-  static bool PTTEngaged;
   static int DegreesPttReturnTo;
   static int FaradayDegrees; 
   if ((millis() - last_ptt_checking_time) > PTT_CHECKING_RATE || (read == NOW)) {
@@ -201,10 +200,11 @@ void check_ptt_status(rrc read) {
           control_port->print("PTT IS OFF. BACK TO BEST RX ANGLE: ");
           control_port->println(DegreesPttReturnTo);
         #endif
-        RX_DegreesTo=DegreesPttReturnTo;
-        TX_DegreesTo=DegreesPttReturnTo;
+        RX_DegreesTo = DegreesPttReturnTo;
+        TX_DegreesTo = DegreesPttReturnTo;
         ptt_move_to(DegreesPttReturnTo);
         PTTEngaged = false;
+        bitWrite(active_features, 6, 0);
       }
       int RX_DegreesPtt = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
       int TX_DegreesPtt = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
@@ -242,6 +242,7 @@ void check_ptt_status(rrc read) {
         #endif
         ptt_move_to(TXFaradayAngle);
         PTTEngaged = true;
+        bitWrite(active_features, 6, 1);
       }
     }
   last_ptt_checking_time=millis();

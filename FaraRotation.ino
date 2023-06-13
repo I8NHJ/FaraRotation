@@ -85,6 +85,7 @@ int RX_DegreesPttInit;
 
 bool Linked = false;
 bool Ptt = false;
+bool PTTEngaged = false;
 
 void setup() {
   initialize_serial();

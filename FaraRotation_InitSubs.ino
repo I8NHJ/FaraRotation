@@ -7,8 +7,8 @@ void initialize_features () {
   // bit 3 <-> NEXTION 4 - ONE ANTENNA ONLY (0=DISABLED, 1=ENABLED)
   // bit 4 <-> NEXTION 3 - TX LINKED TO RX  (0=INACTIVE, 1=ACTIVE)
   // bit 5 <-> NEXTION 2 - PTT CONTROL      (0=INACTIVE, 1=ACTIVE)
-  // bit 6 <-> NEXTION 1 - FUTURE EXPANSION (DEFAULT = 0)
-  // bit 7 <-> NEXTION 0 - FUTURE EXPANSION (DEFAULT = 1)
+  // bit 6 <-> NEXTION 1 - PTT ENGAGED      (0=RX, 1=TX)
+  // bit 7 <-> NEXTION 0 - FUTURE EXPANSION (DEFAULT=1)
   // NEXTION STRING: 10000111
   //                 0<---->7
 
