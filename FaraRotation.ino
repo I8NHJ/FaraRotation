@@ -68,7 +68,7 @@ double MyMoonDist;
 char TargetGrid[7];                         // Max 6 characters!
 double TargetLong;
 double TargetLat;
-double TargetMoonRAscension;                //Moon right ascension
+double TargetMoonRAscension;                
 double TargetMoonDeclination;
 double TargetTopRAscension;
 double TargetTopDeclination;
@@ -132,7 +132,7 @@ void loop() {
   check_if_action_is_needed();
   send_info_to_nextion(TIMED);
   send_status_to_nextion(TIMED);
-  #if defined (PTT_AUTOMATION)
+  #ifdef PTT_AUTOMATION
     if (Ptt) {check_ptt_status(TIMED);}
   #endif
 }

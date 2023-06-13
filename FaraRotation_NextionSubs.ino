@@ -13,6 +13,10 @@ void send_nextion_message(char message[30]) {
 void send_config_to_nextion() {
         EEPROM.get(1, configuration_data);
         char workstring[30];
+        strcpy(workstring, "codeversion.txt=\"");
+        strcat(workstring, CODE_VERSION);
+        strcat(workstring, "\"");
+        send_nextion_message(workstring);
         strcpy(workstring, "callsign.txt=\"");
         strcat(workstring, configuration_data.Callsign);
         strcat(workstring, "\"");

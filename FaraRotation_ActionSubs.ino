@@ -13,8 +13,8 @@ void read_rtc(rrc read) {
 
 void stop(int antenna) {
   if ((antenna == ALL_ANTENNAS) || (Linked) && ((RX_ROTATION_STATUS != RX_IDLE) || (TX_ROTATION_STATUS != TX_IDLE))) {
-    #if defined (PWM_OUTPUT)
-      #if defined (SLOW_START_STOP)
+    #ifdef PWM_OUTPUT
+      #ifdef SLOW_START_STOP
         for (int speed = PWM_SPEED/2; speed > SLOW_START_STOP_MIN; speed -= SLOW_START_STOP_STEPS) {
           if (RX_ROTATING == RX_ROTATING_CW)  {analogWrite(rx_rotate_cw_pwm, speed);}
           if (RX_ROTATING == RX_ROTATING_CCW) {analogWrite(rx_rotate_ccw_pwm, speed);}
@@ -29,7 +29,7 @@ void stop(int antenna) {
       analogWrite(tx_rotate_ccw_pwm, 0);
     #endif
 
-    #if defined(DIGITAL_OUTPUT) 
+    #ifdef DIGITAL_OUTPUT 
       digitalWrite(rx_rotate_cw_dig, LOW);
       digitalWrite(rx_rotate_ccw_dig, LOW);
       digitalWrite(tx_rotate_cw_dig, LOW);
@@ -42,8 +42,8 @@ void stop(int antenna) {
     }
 
   if ((antenna == RX_ANTENNA) && (RX_ROTATION_STATUS != RX_IDLE)) {
-    #if defined(PWM_OUTPUT)
-      #if defined (SLOW_START_STOP)
+    #ifdef PWM_OUTPUT
+      #ifdef SLOW_START_STOP
         for (int speed = PWM_SPEED/2; speed > SLOW_START_STOP_MIN; speed -= SLOW_START_STOP_STEPS) {
           if (RX_ROTATING == RX_ROTATING_CW)  {analogWrite(rx_rotate_cw_pwm, speed);}
           if (RX_ROTATING == RX_ROTATING_CCW) {analogWrite(rx_rotate_ccw_pwm, speed);} 
@@ -53,7 +53,7 @@ void stop(int antenna) {
       analogWrite(rx_rotate_cw_pwm, 0);
       analogWrite(rx_rotate_ccw_pwm, 0); 
     #endif    
-    #if defined(DIGITAL_OUTPUT) 
+    #ifdef DIGITAL_OUTPUT 
       digitalWrite(rx_rotate_cw_dig, LOW);
       digitalWrite(rx_rotate_ccw_dig, LOW);
     #endif
@@ -62,8 +62,8 @@ void stop(int antenna) {
   }
 
   if ((antenna == TX_ANTENNA)  && (TX_ROTATION_STATUS != TX_IDLE)) {
-    #if defined(PWM_OUTPUT)
-      #if defined (SLOW_START_STOP)
+    #ifdef PWM_OUTPUT
+      #ifdef SLOW_START_STOP
         for (int speed = PWM_SPEED/2; speed > SLOW_START_STOP_MIN; speed -= SLOW_START_STOP_STEPS) {
           if (TX_ROTATING == TX_ROTATING_CW)  {analogWrite(tx_rotate_cw_pwm, speed);}
           if (TX_ROTATING == TX_ROTATING_CCW) {analogWrite(tx_rotate_ccw_pwm, speed);} 
@@ -73,7 +73,7 @@ void stop(int antenna) {
       analogWrite(tx_rotate_cw_pwm, 0);
       analogWrite(tx_rotate_ccw_pwm, 0);
     #endif
-    #if defined(DIGITAL_OUTPUT) 
+    #ifdef DIGITAL_OUTPUT 
       digitalWrite(tx_rotate_cw_dig, LOW);
       digitalWrite(tx_rotate_ccw_dig, LOW);
     #endif
@@ -89,8 +89,8 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
   switch (action) {
 
     case ROTATE_RX_ANTENNA_CW:
-      #if defined(PWM_OUTPUT)
-       #if defined(SLOW_START_STOP)
+      #ifdef PWM_OUTPUT
+       #ifdef SLOW_START_STOP
           for (int speed = 0; speed < PWM_SPEED; speed += SLOW_START_STOP_STEPS) {
             analogWrite(rx_rotate_cw_pwm, speed);
             if (rotate == ROTATE_BOTH) {
@@ -104,7 +104,7 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
           analogWrite(tx_rotate_cw_pwm, PWM_SPEED);
         }
       #endif
-      #if defined(DIGITAL_OUTPUT)
+      #ifdef DIGITAL_OUTPUT
         digitalWrite(rx_rotate_cw_dig, HIGH);
           if (rotate == ROTATE_BOTH) {
             digitalWrite(tx_rotate_cw_dig, HIGH);
@@ -113,8 +113,8 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
     break;
 
     case ROTATE_RX_ANTENNA_CCW:
-      #if defined(PWM_OUTPUT)
-        #if defined(SLOW_START_STOP)
+      #ifdef PWM_OUTPUT
+        #ifdef SLOW_START_STOP
           for (int speed = 0; speed < PWM_SPEED; speed += SLOW_START_STOP_STEPS) {
             analogWrite(rx_rotate_ccw_pwm, speed);
             if (rotate == ROTATE_BOTH) {
@@ -128,7 +128,7 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
         analogWrite(tx_rotate_ccw_pwm, PWM_SPEED);
       }
       #endif
-      #if defined(DIGITAL_OUTPUT)
+      #ifdef DIGITAL_OUTPUT
         digitalWrite(rx_rotate_ccw_dig, HIGH);
         if (rotate == ROTATE_BOTH) {
           digitalWrite(tx_rotate_ccw_dig, HIGH);
@@ -137,8 +137,8 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
     break;
 
     case ROTATE_TX_ANTENNA_CW:
-      #if defined(PWM_OUTPUT)
-        #if defined(SLOW_START_STOP)
+      #ifdef PWM_OUTPUT
+        #ifdef SLOW_START_STOP
           for (int speed = 0; speed < PWM_SPEED; speed += SLOW_START_STOP_STEPS) {
             analogWrite(tx_rotate_cw_pwm, speed);
             if (rotate == ROTATE_BOTH) {
@@ -152,7 +152,7 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
           analogWrite(rx_rotate_cw_pwm, PWM_SPEED);
         }
       #endif
-      #if defined(DIGITAL_OUTPUT)
+      #ifdef DIGITAL_OUTPUT
         digitalWrite(tx_rotate_cw_dig, HIGH);
         if (rotate == ROTATE_BOTH) {
           digitalWrite(rx_rotate_cw_dig, HIGH);
@@ -161,8 +161,8 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
     break;
 
     case ROTATE_TX_ANTENNA_CCW:
-      #if defined(PWM_OUTPUT)
-        #if defined(SLOW_START_STOP)
+      #ifdef PWM_OUTPUT
+        #ifdef SLOW_START_STOP
           for (int speed = 0; speed < PWM_SPEED; speed += SLOW_START_STOP_STEPS) {
             analogWrite(tx_rotate_ccw_pwm, speed);
             if (rotate == ROTATE_BOTH) {
@@ -176,7 +176,7 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
           analogWrite(rx_rotate_ccw_pwm, PWM_SPEED);
         }
       #endif
-      #if defined(DIGITAL_OUTPUT)
+      #ifdef DIGITAL_OUTPUT
         digitalWrite(tx_rotate_ccw_dig, HIGH);
         if (rotate == ROTATE_BOTH) {
           digitalWrite(rx_rotate_ccw_dig, HIGH);
@@ -189,26 +189,27 @@ void rotate_antenna(cmdenum action, rlnk rotate) {
   #endif
 } /* END rotate_antenna() */
 
-#if defined(PTT_AUTOMATION)
+#ifdef PTT_AUTOMATION
 void check_ptt_status(rrc read) {
   static bool PTTEngaged;
   static int DegreesPttReturnTo;
   static int FaradayDegrees; 
   if ((millis() - last_ptt_checking_time) > PTT_CHECKING_RATE || (read == NOW)) {
-    // If (PTT) move to Faraday else move to Old RX degrees
-    if (digitalRead(ptt_automation)) {
+    if (digitalRead(ptt_automation)) {                                                        // If (PTT) move to Faraday else move to Old RX degrees
       if (PTTEngaged) {
-        control_port->print("TX OFF RITORNA SU RX PRECEDENTE: ");
-        control_port->println(DegreesPttReturnTo);
-        // LOGIC TO RETURN TO OLD RX POSITION GOES HERE
+        #ifdef DEBUG 
+          control_port->print("PTT IS OFF. BACK TO BEST RX ANGLE: ");
+          control_port->println(DegreesPttReturnTo);
+        #endif
+        RX_DegreesTo=DegreesPttReturnTo;
+        TX_DegreesTo=DegreesPttReturnTo;
+        ptt_move_to(DegreesPttReturnTo);
         PTTEngaged = false;
       }
-      // Check if RX degrees have changed since starting automation, if yes move and init 
       int RX_DegreesPtt = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
       int TX_DegreesPtt = convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA);
-      if (abs(RX_DegreesPtt - TX_DegreesPtt) > 1) { // SLOW_START_STOP_PROXIMITY) {
+      if (abs(RX_DegreesPtt - TX_DegreesPtt) > 1) {                                                 // Check if RX degrees have changed since starting automation, if yes move and init. 1 is the 'tollerance' angle. 
         if (rotation_way(TX_DegreesPtt, RX_DegreesPtt) == CCW) {
-          //if (RX_DegreesPtt < TX_DegreesPtt) {
           if (TX_ROTATING == TX_NO_ROTATING) {
             TX_ROTATING = TX_ROTATING_CCW;
             TX_ROTATION_STATUS = TX_SYNC_TO_RX_PTT_CCW;
@@ -224,8 +225,6 @@ void check_ptt_status(rrc read) {
             rotate_antenna(ROTATE_TX_ANTENNA_CW, ROTATE_ONE);
           }
         }
-        control_port->println("TX OFF SEGUI RX");
-      // Ritorna a RXToReturn
       }
       else {
         stop(TX_ANTENNA);
@@ -234,21 +233,22 @@ void check_ptt_status(rrc read) {
     }
     else {
       if (!PTTEngaged) {
-        // LOGIC TO GO TO FARADAY ANGLE GOES HERE
         DegreesPttReturnTo = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
-        FaradayDegrees = TXFaradayAngle;
-        control_port->print("TX ON MUOVI TO FARADAY: ");
-        control_port->println(TXFaradayAngle);
+        RX_DegreesTo = TXFaradayAngle;
+        TX_DegreesTo = TXFaradayAngle;
+        #ifdef DEBUG
+          control_port->print("PTT IS ON. MOVE TO THE FARADAY ANGLE: ");
+          control_port->println(TXFaradayAngle);
+        #endif
+        ptt_move_to(TXFaradayAngle);
         PTTEngaged = true;
       }
-      control_port->println("TX ON Muoviti");
     }
   last_ptt_checking_time=millis();
   }
 } /* END check_ptt_status() */
 
 void ptt_move_to (int ptt_angle_to){
-        COMMAND = ROTATE_RX_ANTENNA_TO;
         stop(RX_ANTENNA);
         stop(TX_ANTENNA);
         int RX_Antenna_angle = convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA);
@@ -267,7 +267,7 @@ void ptt_move_to (int ptt_angle_to){
           TX_ROTATING = TX_ROTATING_CW;
           TX_ROTATION_STATUS = TX_TO_TARGET_CW;
           send_status_to_nextion(NOW);
-          rotate_antenna(ROTATE_TX_ANTENNA_CW, ROTATE_BOTH);
+          rotate_antenna(ROTATE_RX_ANTENNA_CW, ROTATE_BOTH);
         }
         #ifdef DEBUG
           control_port->print(F("ROTATING RX AND TX ANTENNAS BECAUSE OF PTT "));
@@ -317,8 +317,8 @@ void check_if_action_is_needed() {
     if ((millis() - last_action_control_time) > ACTION_LOOP_RATE) {
 
       if ((RX_ROTATION_STATUS == RX_TO_TARGET_CW) || (RX_ROTATION_STATUS == RX_SLOW_DOWN_CW)) {
-        #if defined(PWM_OUTPUT)
-          #if defined (SLOW_START_STOP)
+        #ifdef PWM_OUTPUT
+          #ifdef SLOW_START_STOP
             if ( abs((RX_DegreesTo - convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA))) < SLOW_START_STOP_PROXIMITY) {
               reduce_speed(RX_ANTENNA, RX_ROTATING);
             }
@@ -331,8 +331,8 @@ void check_if_action_is_needed() {
       }
 
       if ((RX_ROTATION_STATUS == RX_TO_TARGET_CCW) || (RX_ROTATION_STATUS == RX_SLOW_DOWN_CCW)) {
-        #if defined(PWM_OUTPUT)
-          #if defined (SLOW_START_STOP)
+        #ifdef PWM_OUTPUT
+          #ifdef SLOW_START_STOP
             if ( abs((RX_DegreesTo - convert_analog_to_degrees(analogRead(rx_rotator_degs_pin), RX_ANTENNA))) < SLOW_START_STOP_PROXIMITY) {
               reduce_speed(RX_ANTENNA, RX_ROTATING);
             }
@@ -345,9 +345,8 @@ void check_if_action_is_needed() {
       }
 
       if ((TX_ROTATION_STATUS == TX_TO_TARGET_CW) || (TX_ROTATION_STATUS == TX_SYNC_TO_RX_CW) || (TX_ROTATION_STATUS == TX_SLOW_DOWN_CW)) {
-        control_port->println("Perche CW");
-        #if defined(PWM_OUTPUT)
-          #if defined (SLOW_START_STOP)
+        #ifdef PWM_OUTPUT
+          #ifdef SLOW_START_STOP
             if ( abs((TX_DegreesTo - convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA))) < SLOW_START_STOP_PROXIMITY) {
               reduce_speed(TX_ANTENNA, TX_ROTATING);
             }
@@ -360,9 +359,8 @@ void check_if_action_is_needed() {
       }
 
       if ((TX_ROTATION_STATUS == TX_TO_TARGET_CCW) || (TX_ROTATION_STATUS == TX_SYNC_TO_RX_CCW) || (TX_ROTATION_STATUS == TX_SLOW_DOWN_CCW)) {
-                control_port->println("Perche CCW");
-        #if defined(PWM_OUTPUT)
-          #if defined (SLOW_START_STOP)
+        #ifdef PWM_OUTPUT
+          #ifdef SLOW_START_STOP
             if ( abs((TX_DegreesTo - convert_analog_to_degrees(analogRead(tx_rotator_degs_pin), TX_ANTENNA))) < SLOW_START_STOP_PROXIMITY) {
               reduce_speed(TX_ANTENNA, TX_ROTATING);
             }
