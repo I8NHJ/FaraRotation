@@ -1,6 +1,6 @@
 /*-------- SUBROUTINES --------  NEXTION  */
 
-void send_nextion_message(char message[30]) {
+void send_nextion_message(char message[31]) {
   nextion_port->print(message);
   nextion_port->write(0xFF);
   nextion_port->write(0xFF);
