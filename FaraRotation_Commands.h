@@ -20,3 +20,5 @@ const char CALIBRATE_TX_ANTENNA_CCW_CMD[]  = "*CTX2";
 const char SAVE_CALLSIGN_TO_EEPROM_CMD[]   = "*SC";           // Plus up to 10 chars for My Callsign              Example: *SCN5NHJ            
 const char SAVE_GRID_TO_EEPROM_CMD[]       = "*SG";           // Plus up to 6 chars for My GRID                   Example: *SGEM13pc                 
 const char SEND_CONFIG_CMD[]               = "*CFG";                                                        
+
+const int COMMAND_BUFFER_SIZE = 50;

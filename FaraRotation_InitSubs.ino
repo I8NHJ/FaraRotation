@@ -86,6 +86,11 @@ void initialize_serial() {
 } /* END initialize_serial() */
 
 void initialize_pins() {
+  
+  #if defined(EXTERNAL_REFERENCE)
+    analogReference(EXTERNAL);
+  #endif
+
   // define pins
   pinMode(rx_rotate_cw_enable, OUTPUT);
   pinMode(rx_rotate_ccw_enable, OUTPUT);

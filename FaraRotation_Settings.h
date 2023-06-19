@@ -9,12 +9,14 @@
 #define NEXTION_PORT_MAPPED_TO &Serial3
 #define NEXTION_PORT_BAUD_RATE 115200
 
-/* OPTIONS */
+/* PROGRAM FEATURES */
 // #define DIGITAL_OUTPUT
 #define PWM_OUTPUT
 #define SLOW_START_STOP
 #define PTT_AUTOMATION
-// #define ONE_ANTENNA
+// #define EXTERNAL_REFERENCE
+// #define ONE_ANTENNA  // NOT IMPLEMENTED YET
+
 
 /* OPTIONS CONFIGURATION */
 #define PWM_SPEED 255
@@ -24,7 +26,7 @@
 #define SLOW_START_STOP_PROXIMITY 3
 
 /* TIMING CONFIGURATION */
-#define POTS_READING_RATE 100 //250         // Potentiometer reading loop timing (millisecs) Nextion timer refresh is set to 100ms
+#define POTS_READING_RATE 100         // Potentiometer reading loop timing (millisecs) Nextion timer refresh is set to 100ms
 #define INFO_SENDING_RATE 1000        // Info broadcasting timing (millisecs)
 #define STATUS_SENDING_RATE 250       // Info broadcasting timing (millisecs)
 #define RTC_READING_RATE 1000         // RTC reading timing (millisecs)
@@ -34,5 +36,3 @@
 #define NEXTION_PORT_READ_RATE 250    // Command loop timing (millisecs)
 
 #define UTCDIFF 0                     // Time Difference between Real Time Clock and GMT 
-
-#define COMMAND_BUFFER_SIZE 50

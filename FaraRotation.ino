@@ -16,8 +16,6 @@
 
 /*-------- VARIABLES --------*/
 CONTROL_PORT_SERIAL_PORT_CLASS *control_port;
-// char control_port_buffer[COMMAND_BUFFER_SIZE];
-// byte control_port_buffer[COMMAND_BUFFER_SIZE];
 
 NEXTION_PORT_SERIAL_PORT_CLASS *nextion_port;
 char nextion_port_buffer[COMMAND_BUFFER_SIZE];
