@@ -1,0 +1,35 @@
+send_status_to_nextion() 
+gStatus.txt="active_features"				(14+16)
+tRXStat.txt="ROTATION_STATUS_TEXT"			(14+16)
+tTXStat.txt="ROTATION_STATUS_TEXT"			(14+16)
+
+send_info_to_nextion()
+tCK.txt="YYYY MMM DD hh:mm:ss"				(10+20)
+tMyGrid.txt="configuration_data.Grid"			(14+16)
+tMyMoonAZ.txt="MyMoonAz"				(16+14)
+tMyMoonEL.txt="MyMoonEl"				(16+14)
+tTargetGrid.txt="TargetGrid"				(18+12)
+tTargetMoonAZ.txt="TargetMoonAz"			(20+10)
+tTargetMoonEL.txt="TargetMoonEl"			(20+10)
+tOffset.txt="SpatialOffset"				(14+16)
+tTXFaradayDeg.txt="TXFaradayAngle"			(20+10)
+
+nextion_show_angle()
+vRXAngle.val=degrees 					(13+17)
+tRXAngle.txt="degrees"					(15+15)
+vTXAngle.val=degrees					(13+17)
+tTXAngle.txt="degrees"					(15+15)
+
+send_config_to_nextion()
+cv.txt="CODE_VERSION" 					(9+21)
+callsign.txt="configuration_data.Callsign" 		(15+15)
+gMyGrid.txt="configuration_data.Grid" 			(14+16)
+RX_ANT_CW_ANA.txt="configuration_data.Analog_CW" 	(20+10)
+RX_ANT_CCW_ANA.txt="configuration_data.Analog_CCW" 	(21+9)
+TX_ANT_CW_ANA.txt="configuration_data.Analog_CW"	(20+10)
+TX_ANT_CCW_ANA.txt="configuration_data.Analog_CCW"	(21+9)
+
+
+
+
+
