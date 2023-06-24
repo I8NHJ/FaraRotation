@@ -8,11 +8,11 @@ void initialize_features () {
   // bit 4 <-> NEXTION 3 - TX LINKED TO RX  (0=INACTIVE, 1=ACTIVE)
   // bit 5 <-> NEXTION 2 - PTT CONTROL      (0=INACTIVE, 1=ACTIVE)
   // bit 6 <-> NEXTION 1 - PTT ENGAGED      (0=RX, 1=TX)
-  // bit 7 <-> NEXTION 0 - FUTURE EXPANSION (DEFAULT=1)
+  // bit 7 <-> NEXTION 0 - EXTERNAL VREF    (0=DISABLED, 1=ENABLED)
   // NEXTION STRING: 10000111
   //                 0<---->7
 
-  active_features = B10000000; //DEFAULT
+  active_features = B00000000; //DEFAULT
 
   #if defined (PWM_OUTPUT)
     bitWrite(active_features, 0, 1);
@@ -25,6 +25,9 @@ void initialize_features () {
   #endif
   #if defined (ONE_ANTENNA)
     bitWrite(active_features, 3, 1);
+  #endif
+  #if defined (EXTERNAL_REFERENCE)
+    bitWrite(active_features, 7,1);
   #endif    
 } /* END initialize_features() */
 
