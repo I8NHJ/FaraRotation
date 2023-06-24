@@ -30,6 +30,31 @@ TX_ANT_CW_ANA.txt="configuration_data.Analog_CW"	(20+10)
 TX_ANT_CCW_ANA.txt="configuration_data.Analog_CCW"	(21+9)
 
 
+MAIN WINDOW COMMAND SEQUENCE
+tRXAngle.txt="35"
+tTXAngle.txt="-15"
+tTXFaradayDeg.txt="42"
+tOffset.txt="85"
+gTargetGrid.txt="JN71hn"
+gMyGrid.txt="EM13pc"
+tTXStat.txt="Following RX"
+tRXStat.txt="Moving to"
+gStatus.txt="10101111" (PTT LINK, RECEIVING)
+gStatus.txt="10011111" (TX LINKED)
+gStatus.txt="10001111" (NOTHING ACTIVE)
+
+MOON INFO SEQUENCE
+tCK.txt="2023 JUN 20 18:15:01" 
+tMyGrid.txt="EM13pc"
+tMyMoonAZ.txt="45.7"
+tMyMoonEL.txt="32.2"
+tTargetGrid.txt="JN71hn"
+tTargetMoonAZ.txt="245.6"
+tTargetMoonEL.txt="12.4"
+tOffset.txt="85"
+
+
+
 
 
 
