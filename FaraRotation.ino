@@ -3,6 +3,8 @@
   An Arduino/Nextion project
 
   Copyright 2023 Massimo 'Max' Mucci, N5NHJ
+  max.i8nhj@gmail.com
+  
   FaraRotation is distributed under the MIT license.
 */
  
