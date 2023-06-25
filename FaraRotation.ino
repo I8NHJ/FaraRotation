@@ -2,7 +2,7 @@
   N5NHJ FaraRotation
   An Arduino/Nextion project
 
-  Copyright 2023 Massimo Mucci, N5NHJ
+  Copyright 2023 Massimo 'Max' Mucci, N5NHJ
   FaraRotation is distributed under the MIT license.
 */
  
