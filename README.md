@@ -12,4 +12,4 @@ FaraRotation has been inspired by [K3NG rotor controller](https://github.com/k3n
 
 Thank you to the [WSJT-X](https://wsjt.sourceforge.io/wsjtx.html) people who made the moon libraries available to the public.
 
-73, Max N5NHJ
+73, Max N5NHJ (I8NHJ)
